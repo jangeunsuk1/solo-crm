@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solo CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  /* ④ Warm Paper Light — bright, violet accent */
+  --bg:       #f5f4f0;
+  --bg2:      #eeecea;
+  --surface:  #ffffff;
+  --surface2: #f5f4f0;
+  --surface3: #eae8e3;
+  --border:   #dedad2;
+  --border2:  #c8c4ba;
+  --text:     #1c1a16;
+  --text2:    #5a5850;
+  --text3:    #9a9890;
+  /* Violet accent */
+  --ac:       #4f46e5;
+  --ac2:      #6366f1;
+  --ac-dim:   rgba(79,70,229,.10);
+  --ac-glow:  rgba(79,70,229,.22);
+  /* Status colors */
+  --green:    #16a34a;  --green-d: rgba(22,163,74,.10);
+  --yellow:   #d97706;  --yellow-d:rgba(217,119,6,.10);
+  --orange:   #ea580c;  --orange-d:rgba(234,88,12,.10);
+  --red:      #dc2626;  --red-d:   rgba(220,38,38,.10);
+  --blue:     #2563eb;  --blue-d:  rgba(37,99,235,.10);
+  --purple:   #9333ea;  --purple-d:rgba(147,51,234,.10);
+  --teal:     #0d9488;  --teal-d:  rgba(13,148,136,.10);
+  --r: 10px; --rs: 6px;
+  --shadow: 0 2px 12px rgba(0,0,0,.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px}
+
+/* ── App Shell ── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:230px;min-width:230px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.logo{
+  padding:18px 16px 14px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;font-weight:500;
+  color:var(--ac2);letter-spacing:.04em;
+}
+.logo-sub{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:.08em}
+
+.nav{padding:10px 0;flex:1;overflow-y:auto}
+.nav-section{
+  font-size:9px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;
+  color:var(--text3);
+  padding:12px 16px 4px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 16px;
+  cursor:pointer;font-size:13px;color:var(--text2);
+  border-left:2px solid transparent;
+  transition:all .15s;
+}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--ac2);background:var(--ac-dim);border-left-color:var(--ac)}
+.nav-icon{font-size:14px;width:16px;text-align:center}
+.nav-badge{
+  margin-left:auto;
+  background:var(--ac);color:#fff;
+  font-size:9px;font-weight:700;
+  padding:1px 5px;border-radius:20px;
+  min-width:16px;text-align:center;
+}
+
+/* ── Todo widget in sidebar ── */
+.todo-widget{
+  border-top:1px solid var(--border);
+  padding:12px 14px;
+  background:var(--bg2);
+}
+.todo-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.todo-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.todo-input-row{display:flex;gap:5px;margin-bottom:8px;overflow:hidden}
+.todo-input-row input{
+  flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:5px 8px;
+  color:var(--text);font-family:inherit;font-size:12px;outline:none;
+}
+.todo-input-row input:focus{border-color:var(--ac)}
+.todo-list{display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
+.todo-item{
+  display:flex;align-items:flex-start;gap:7px;
+  font-size:12px;color:var(--text2);
+  padding:3px 0;
+  cursor:pointer;
+}
+.todo-check{
+  width:14px;height:14px;min-width:14px;
+  border:1px solid var(--border2);
+  border-radius:3px;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;transition:all .15s;
+}
+.todo-item.done .todo-check{background:var(--green);border-color:var(--green);color:#fff}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--text3)}
+.todo-item:hover .todo-del{opacity:1}
+.todo-del{opacity:0;margin-left:auto;color:var(--text3);font-size:11px;transition:opacity .15s}
+
+.sidebar-bottom{
+  border-top:1px solid var(--border);
+  padding:10px 14px;
+  display:flex;flex-direction:column;gap:6px;
+}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{
+  height:54px;min-height:54px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 22px;gap:14px;
+}
+.topbar-title{font-size:15px;font-weight:600;flex:1}
+.search-wrap{
+  display:flex;align-items:center;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--rs);
+  padding:6px 11px;gap:7px;width:260px;
+  transition:border-color .15s;
+}
+.search-wrap:focus-within{border-color:var(--ac)}
+.search-wrap input{
+  background:none;border:none;outline:none;
+  color:var(--text);font-family:inherit;font-size:13px;width:100%;
+}
+.search-wrap input::placeholder{color:var(--text3)}
+.content{flex:1;overflow-y:auto;padding:22px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:var(--rs);
+  border:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:500;
+  transition:all .15s;
+}
+.btn-primary{background:var(--ac);color:#fff}
+.btn-primary:hover{background:var(--ac2);box-shadow:0 0 0 3px var(--ac-glow)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.btn-danger{background:var(--red-d);color:var(--red);border:1px solid transparent}
+.btn-danger:hover{background:rgba(248,113,113,.2)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-xs{padding:2px 7px;font-size:11px}
+.btn-icon{padding:5px 8px}
+
+/* ── Cards ── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:20px;
+}
+.card+.card,.card+.mb4{margin-top:16px}
+
+/* ── Stats ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.stat-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* ── Company Grid ── */
+.co-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.co-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.co-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--ac);opacity:0;transition:opacity .2s;
+}
+.co-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow)}
+.co-card:hover::before{opacity:1}
+.co-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.co-name{font-size:15px;font-weight:600}
+.co-industry{font-size:11px;color:var(--text3);margin-top:2px}
+.co-meta{font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:4px}
+.co-meta-row{display:flex;gap:6px;align-items:center}
+.ml{color:var(--text3);min-width:52px;font-size:11px}
+.co-next{
+  margin-top:10px;padding:7px 10px;
+  background:var(--ac-dim);border-radius:var(--rs);
+  font-size:11px;color:var(--ac2);
+  border-left:2px solid var(--ac);
+}
+
+/* ── Status / Stage badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.s-잠재고객{background:var(--blue-d);color:var(--blue)}
+.s-가망고객{background:var(--teal-d);color:var(--teal)}
+.s-상담고객{background:var(--yellow-d);color:var(--yellow)}
+.s-제안고객{background:var(--orange-d);color:var(--orange)}
+.s-계약고객{background:var(--green-d);color:var(--green)}
+.s-냉담고객{background:var(--surface3);color:var(--text3)}
+.s-관리고객{background:var(--purple-d);color:var(--purple)}
+
+/* ── Detail Layout ── */
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:22px}
+.sec-title{
+  font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--text3);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Form fields ── */
+.field{margin-bottom:12px}
+.field label{
+  display:block;font-size:11px;color:var(--text3);
+  margin-bottom:5px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:7px 11px;
+  color:var(--text);font-family:inherit;font-size:13px;
+  outline:none;transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--ac)}
+.field textarea{resize:vertical;min-height:75px}
+.field select option{background:var(--surface2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* ── Info grid in detail ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.info-item label{display:block;font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em;font-weight:500}
+.info-item .val{font-size:13px;color:var(--text)}
+.info-item .val.empty{color:var(--text3);font-style:italic}
+
+/* ── People list ── */
+.people-list{display:flex;flex-direction:column;gap:8px}
+.person-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);
+}
+.person-avatar{
+  width:32px;height:32px;min-width:32px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;
+  background:var(--ac-dim);color:var(--ac2);
+}
+.person-info{flex:1}
+.person-name{font-size:13px;font-weight:500}
+.person-role{font-size:11px;color:var(--text3)}
+.person-contact{font-size:11px;color:var(--text2)}
+.person-type-chip{
+  font-size:10px;padding:1px 6px;border-radius:20px;
+  border:1px solid var(--border2);color:var(--text3);
+}
+
+/* ── Timeline ── */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;padding-bottom:18px;position:relative}
+.tl-item:not(:last-child)::after{
+  content:'';position:absolute;left:17px;top:36px;bottom:0;
+  width:1px;background:var(--border);
+}
+.tl-dot{
+  width:34px;height:34px;min-width:34px;
+  border-radius:50%;background:var(--surface2);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;z-index:1;
+}
+.tl-body{flex:1}
+.tl-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.tl-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.tl-method{font-size:10px;padding:1px 6px;border-radius:20px;background:var(--surface3);color:var(--text2)}
+.tl-box{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px;
+}
+.tl-summary{font-size:13px;color:var(--text);margin-bottom:6px}
+.tl-decision{font-size:11px;color:var(--yellow);padding:3px 8px;background:var(--yellow-d);border-radius:var(--rs);display:inline-block;margin-bottom:5px}
+.tl-next{font-size:11px;color:var(--ac2);padding:3px 8px;background:var(--ac-dim);border-radius:var(--rs);display:inline-block}
+.tl-attachments{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px}
+
+.att-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:10px;
+  background:var(--surface3);border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;text-decoration:none;
+  transition:all .15s;
+}
+.att-chip:hover{border-color:var(--ac);color:var(--ac2)}
+
+/* ── Recent / Actions list ── */
+.rec-list{display:flex;flex-direction:column;gap:9px}
+.rec-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:13px 15px;
+  cursor:pointer;transition:border-color .15s;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.rec-item:hover{border-color:var(--border2)}
+.rec-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;min-width:72px;padding-top:1px}
+.rec-body{flex:1}
+.rec-co{font-size:13px;font-weight:500;color:var(--ac2);margin-bottom:2px}
+.rec-summary{font-size:12px;color:var(--text2)}
+
+/* ── Calendar view ── */
+.cal-wrap{display:grid;grid-template-columns:1fr 300px;gap:20px}
+.cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.cal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-month{font-size:15px;font-weight:600}
+.cal-days-header{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  border-bottom:1px solid var(--border);
+}
+.cal-day-name{
+  text-align:center;padding:8px 4px;
+  font-size:11px;color:var(--text3);font-weight:500;
+}
+.cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{
+  min-height:80px;border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:6px;
+  transition:background .15s;cursor:pointer;
+}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell:hover{background:var(--surface2)}
+.cal-cell.today .cal-num{
+  background:var(--ac);color:#fff;
+  border-radius:50%;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+}
+.cal-cell.other-month .cal-num{color:var(--text3)}
+.cal-num{font-size:12px;color:var(--text2);margin-bottom:4px;width:22px;text-align:center}
+.cal-event{
+  font-size:10px;padding:1px 5px;border-radius:3px;
+  background:var(--ac-dim);color:var(--ac2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:2px;
+}
+.cal-event.contact{background:var(--green-d);color:var(--green)}
+.cal-event.todo{background:var(--yellow-d);color:var(--yellow)}
+
+.cal-sidebar{display:flex;flex-direction:column;gap:14px}
+.cal-event-list{display:flex;flex-direction:column;gap:7px;max-height:400px;overflow-y:auto}
+.cal-ev-item{
+  padding:9px 12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);font-size:12px;
+}
+.cal-ev-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:2px}
+.cal-ev-title{color:var(--text);font-weight:500}
+.cal-ev-company{color:var(--ac2);font-size:11px}
+
+/* ── Email draft ── */
+.email-wrap{display:grid;grid-template-columns:280px 1fr;gap:20px}
+.email-list{display:flex;flex-direction:column;gap:7px}
+.email-item{
+  padding:10px 12px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--rs);
+  cursor:pointer;transition:border-color .15s;
+}
+.email-item:hover,.email-item.active{border-color:var(--ac);background:var(--ac-dim)}
+.email-item-company{font-size:12px;font-weight:500;color:var(--ac2)}
+.email-item-subject{font-size:11px;color:var(--text2);margin-top:2px}
+.email-item-date{font-size:10px;color:var(--text3);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.email-compose{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;
+}
+.email-field{margin-bottom:10px}
+.email-field label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px}
+.email-field input,.email-field textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:7px 10px;
+  color:var(--text);font-family:inherit;font-size:13px;outline:none;
+}
+.email-field textarea{resize:vertical;min-height:200px}
+.email-field input:focus,.email-field textarea:focus{border-color:var(--ac)}
+
+/* ── Modal ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  backdrop-filter:blur(5px);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:14px;width:100%;max-width:600px;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:var(--shadow-lg);
+  transform:translateY(8px);transition:transform .2s;
+}
+.overlay.open .modal{transform:translateY(0)}
+.modal-lg{max-width:740px}
+.mhead{
+  padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.mtitle{font-size:15px;font-weight:600}
+.mbody{padding:22px}
+.mfoot{
+  padding:14px 22px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:9px;
+  position:sticky;bottom:0;background:var(--surface);
+}
+
+/* ── Excel import ── */
+.drop-zone{
+  border:2px dashed var(--border2);border-radius:var(--r);
+  padding:30px;text-align:center;cursor:pointer;
+  transition:all .15s;font-size:13px;color:var(--text3);
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--ac);color:var(--ac2);background:var(--ac-dim)}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.preview-table th,.preview-table td{
+  padding:6px 10px;text-align:left;
+  border:1px solid var(--border);
+}
+.preview-table th{background:var(--surface2);color:var(--text2);font-weight:500}
+.preview-table td{color:var(--text)}
+.map-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px}
+.map-row label{min-width:100px;color:var(--text2)}
+.map-row select{
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--rs);padding:5px 8px;
+  color:var(--text);font-family:inherit;font-size:12px;outline:none;
+}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:22px;right:22px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:11px 16px;
+  font-size:13px;box-shadow:var(--shadow);
+  z-index:200;transform:translateY(8px);opacity:0;
+  transition:all .2s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── Utils ── */
+.page{display:none}.page.active{display:block}
+.back-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  color:var(--text3);font-size:12px;cursor:pointer;
+  padding:3px 0;margin-bottom:18px;
+  transition:color .15s;
+}
+.back-btn:hover{color:var(--text)}
+.mb4{margin-bottom:16px}
+mark{background:var(--ac-dim);color:var(--ac2);border-radius:2px}
+.tag{
+  display:inline-flex;align-items:center;
+  padding:1px 7px;border-radius:4px;font-size:10px;
+  background:var(--surface3);color:var(--text2);border:1px solid var(--border);
+}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text3)}
+.empty-state .ei{font-size:36px;margin-bottom:10px}
+.empty-state p{font-size:13px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── List view table */
+.co-table{width:100%;border-collapse:collapse;font-size:12px}
+.co-table th{
+  background:var(--surface2);color:var(--text3);
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);
+  white-space:nowrap;
+}
+.co-table td{
+  padding:9px 10px;border-bottom:1px solid var(--border);
+  color:var(--text);vertical-align:top;
+}
+.co-table tr:hover td{background:var(--surface2)}
+.co-table td.name{font-weight:600;color:var(--ac2)}
+.co-table td.muted{color:var(--text2);font-size:11px}
+.co-table td.memo{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text3);font-size:11px}
+
+/* ── View toggle */
+.view-btn{
+  padding:4px 12px;border-radius:7px;font-size:12px;font-weight:500;
+  border:none;cursor:pointer;transition:all .15s;
+  background:transparent;color:var(--text3);
+}
+.view-btn.on{background:var(--ac);color:#fff}
+
+/* ── Print styles */
+@media print{
+  /* 인쇄 시 숨길 요소 */
+  .sidebar,.topbar,.filterBar,#filterBar,
+  .stats-bar,#statsBar,.view-toggle-row,
+  button,.btn,.nav-badge,
+  #page-recent,#page-actions,#page-calendar,
+  #page-detail,#page-email{display:none!important}
+  /* 레이아웃 */
+  .app{display:block!important}
+  .main{overflow:visible!important;width:100%!important}
+  .content{overflow:visible!important;padding:8px!important}
+  /* companies 페이지만 표시 */
+  #page-companies{display:block!important}
+  .co-grid{display:none!important}
+  #companyTable{display:block!important}
+  /* 인쇄 헤더 */
+  .print-header{display:block!important}
+  .no-print{display:none!important}
+  /* 테이블 스타일 */
+  body{background:#fff!important;color:#000!important;font-size:10px}
+  .co-table{width:100%!important}
+  .co-table th{background:#e8e8e8!important;color:#000!important;
+    border:1px solid #999!important;padding:5px 7px!important;font-size:10px!important}
+  .co-table td{color:#000!important;border:1px solid #ccc!important;
+    padding:4px 7px!important;font-size:10px!important}
+  .co-table td.name{color:#00008b!important;font-weight:bold!important}
+  .badge{background:#eee!important;color:#333!important;
+    border:1px solid #999!important;font-size:9px!important}
+  @page{margin:12mm 10mm;size:A4 landscape}
+}
+.print-header{
+  display:none;
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:2px solid #333;
+}
+.print-header h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.print-header p{font-size:11px;color:#666}
+</style>
+
+// ════════════════════════════════════════
+// SUPABASE 연동
+// ════════════════════════════════════════
+const SUPA_URL = 'https://fpumejzdwpoyclbcuhmj.supabase.co';
+const SUPA_KEY = 'sb_publishable_ARrEFzxIfbu_sMHRHaWmfg_FbHMIibn';
+
+async function supaGet(){
+  try{
+    const r = await fetch(SUPA_URL+'/rest/v1/crm_data?id=eq.main', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    const d = await r.json();
+    return d && d[0] ? d[0] : null;
+  }catch(e){ console.error('supaGet error',e); return null; }
+}
+
+async function supaSet(data){
+  try{
+    await fetch(SUPA_URL+'/rest/v1/crm_data?id=eq.main', {
+      method:'PATCH',
+      headers:{
+        'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Prefer':'return=minimal'
+      },
+      body:JSON.stringify({
+        companies:data.companies,
+        contacts:data.contacts,
+        todos:data.todos,
+        emails:data.emails,
+        appointments:data.appointments,
+        updated_at:new Date().toISOString()
+      })
+    });
+  }catch(e){ console.error('supaSet error',e); }
+}
+
+// 자동 저장 (3초 디바운스)
+let _saveTimer=null;
+function scheduleSave(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(function(){
+    supaSet({
+      companies:DB.companies,
+      contacts:DB.contacts,
+      todos:DB.todos,
+      emails:DB.emails,
+      appointments:DB.appointments
+    });
+  },3000);
+}
+
+// 동기화 상태 표시
+function showSyncStatus(msg, isError){
+  var el=document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent=msg;
+  el.style.color=isError?'var(--red)':'var(--green)';
+  setTimeout(function(){ el.textContent=''; },3000);
+}
+
+</head>
+<body>
+<div class="app">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Solo CRM</div>
+    <div class="logo-sub">1인 컨설턴트용</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">메인</div>
+    <div class="nav-item active" id="nav-companies" onclick="showPage('companies')">
+      <span class="nav-icon">🏢</span> 고객사 정보
+    </div>
+    <div class="nav-item" id="nav-recent" onclick="showPage('recent')">
+      <span class="nav-icon">📋</span> 접촉일지
+      <span class="nav-badge" id="badge-recent">0</span>
+    </div>
+    <div class="nav-item" id="nav-actions" onclick="showPage('actions')">
+      <span class="nav-icon">✅</span> 다음 액션
+      <span class="nav-badge" id="badge-actions">0</span>
+    </div>
+    <div class="nav-section">도구</div>
+    <div class="nav-item" id="nav-calendar" onclick="showPage('calendar')">
+      <span class="nav-icon">📅</span> 캘린더
+    </div>
+
+  </nav>
+
+  <!-- Today's Todo -->
+  <div class="todo-widget">
+    <div class="todo-header">
+      <div class="todo-title">오늘의 할 일</div>
+      <span style="font-size:10px;color:var(--text3)" id="todo-progress"></span>
+    </div>
+    <div class="todo-input-row">
+      <input type="text" id="todoInput" placeholder="할 일 추가..." onkeydown="if(event.key==='Enter')addTodo()">
+      <button class="btn btn-primary btn-icon" onclick="addTodo()" style="padding:5px 10px;font-size:14px;min-width:30px;flex-shrink:0">+</button>
+    </div>
+    <div class="todo-list" id="todoList"></div>
+  </div>
+
+  <div style="padding:8px 12px;font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between">
+    <span id="syncStatus"></span>
+    <button onclick="manualSync()" style="font-size:11px;padding:2px 8px;background:var(--ac-dim);color:var(--ac2);border:1px solid var(--ac);border-radius:var(--rs);cursor:pointer">☁ 동기화</button>
+  </div>
+  <div class="sidebar-bottom">
+    <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 내보내기</button>
+    <label for="importJson" class="btn btn-ghost btn-sm" style="cursor:pointer;text-align:center">📥 JSON 가져오기</label>
+    <input type="file" id="importJson" accept="*/*" style="position:absolute;width:0;height:0;opacity:0" onchange="importJSON(event)">
+    <button class="btn btn-ghost btn-sm" onclick="openExcelImport()">📊 엑셀 가져오기</button>
+    <div style="height:1px;background:var(--border);margin:4px 0"></div>
+    <button class="btn btn-sm" onclick="openResetModal()" style="background:var(--red-d);color:var(--red);border:1px solid transparent;width:100%;justify-content:center">🗑 전체 데이터 초기화</button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">고객사 정보</div>
+    <div class="search-wrap">
+      <span style="color:var(--text3)">🔍</span>
+      <input type="text" id="searchInput" placeholder="회사, 담당자, 키워드..." oninput="handleSearch(this.value)">
+    </div>
+    <button class="btn btn-primary" id="topbar-btn" onclick="openCompanyModal()">+ 회사 추가</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ── Companies ── -->
+    <div class="page active" id="page-companies">
+      <!-- 보기 모드 토글 -->
+      <div class="view-toggle-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:3px">
+          <button id="btn-active" onclick="setShowAll(false)"
+            style="padding:4px 14px;border-radius:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;
+                   background:var(--ac);color:#fff">
+            ⚡ 활성 회사만
+          </button>
+          <button id="btn-all" onclick="setShowAll(true)"
+            style="padding:4px 14px;border-radius:7px;font-size:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s;
+                   background:transparent;color:var(--text3)">
+            전체 보기
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="activeCount" style="font-size:11px;color:var(--text3)"></span>
+
+          <!-- 인쇄 -->
+          <button onclick="printList()" style="padding:6px 14px;border-radius:var(--rs);background:var(--ac);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">🖨 인쇄</button>
+          <button onclick="exportExcel()" style="padding:6px 14px;border-radius:var(--rs);background:var(--green);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">📊 엑셀 다운로드</button>
+        </div>
+      </div>
+      <div id="filterBar" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:16px">
+        <!-- 고객단계 -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);min-width:52px">고객단계</span>
+          <div id="stageFilters" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        </div>
+        <!-- 지역 -->
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);min-width:52px;padding-top:3px">지역</span>
+          <div style="flex:1">
+            <div id="categoryButtons" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px"></div>
+            <div id="subCatButtons" style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px"></div>
+          </div>
+        </div>
+        <!-- 경로 -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);min-width:52px">경로</span>
+          <div id="routeFilters" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        </div>
+        <!-- 명함등록일 + 초기화 -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);min-width:52px">명함등록</span>
+          <input type="date" id="cardDateFrom" onchange="doFilter()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:4px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+          <span style="color:var(--text3);font-size:11px">~</span>
+          <input type="date" id="cardDateTo" onchange="doFilter()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:4px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+          <button class="btn btn-ghost btn-xs" onclick="clearFilters()" style="margin-left:auto">필터 초기화</button>
+        </div>
+      </div>
+      <div class="print-header" id="printHeader"></div>
+      <div class="stats-bar" id="statsBar"></div>
+      <div class="co-grid" id="companyGrid"></div>
+      <div id="companyTable" style="display:none"></div>
+      <div class="empty-state" id="coEmpty" style="display:none">
+        <div class="ei">🏢</div>
+        <p id="coEmptyMsg">활성 회사가 없습니다.</p>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="setShowAll(true)">전체 보기</button>
+      </div>
+    </div>
+
+    <!-- ── Recent / 접촉일지 ── -->
+    <div class="page" id="page-recent">
+      <div class="rec-list" id="recentList"></div>
+      <div class="empty-state" id="recentEmpty" style="display:none">
+        <div class="ei">📋</div><p>접촉 기록이 없습니다.</p>
+      </div>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div class="page" id="page-actions">
+      <div class="rec-list" id="actionsList"></div>
+      <div class="empty-state" id="actionsEmpty" style="display:none">
+        <div class="ei">✅</div><p>다음 액션이 없습니다.</p>
+      </div>
+    </div>
+
+    <!-- ── Calendar ── -->
+    <div class="page" id="page-calendar">
+      <div class="cal-wrap">
+        <div>
+          <div class="cal-grid">
+            <div class="cal-header">
+              <div class="cal-nav">
+                <button class="btn btn-ghost btn-icon btn-sm" onclick="calMove(-1)">‹</button>
+                <span class="cal-month" id="calMonth"></span>
+                <button class="btn btn-ghost btn-icon btn-sm" onclick="calMove(1)">›</button>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="calToday()">오늘</button>
+            </div>
+            <div class="cal-days-header">
+              <div class="cal-day-name" style="color:var(--red)">일</div>
+              <div class="cal-day-name">월</div><div class="cal-day-name">화</div>
+              <div class="cal-day-name">수</div><div class="cal-day-name">목</div>
+              <div class="cal-day-name">금</div>
+              <div class="cal-day-name" style="color:var(--blue)">토</div>
+            </div>
+            <div class="cal-body" id="calBody"></div>
+          </div>
+        </div>
+        <div class="cal-sidebar">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div class="sec-title" style="margin-bottom:0">이달 일정</div>
+              <div style="display:flex;gap:6px;font-size:10px;color:var(--text3)">
+                <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>접촉</span>
+                <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:var(--orange);display:inline-block"></span>다음스텝</span>
+                <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:2px;background:var(--blue);display:inline-block"></span>약속</span>
+              </div>
+            </div>
+            <div class="cal-event-list" id="calEventList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- ── Detail ── -->
+    <div class="page" id="page-detail">
+      <div class="back-btn" onclick="showPage('companies')">← 목록으로</div>
+      <div id="detailContent"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════ -->
+
+<!-- Company Modal -->
+<div class="overlay" id="companyModal">
+<div class="modal modal-lg">
+  <div class="mhead">
+    <div class="mtitle" id="coModalTitle">회사 추가</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('companyModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="sec-title">기본 정보</div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>회사명 *</label><input id="c-name" placeholder="(주)예시컨설팅"></div>
+      <div class="field"><label>대분류(경로)</label>
+        <select id="c-industry" onchange="updateSubCatOptions()">
+          <option value="">선택</option>
+          <option value="소개">소개</option>
+          <option value="개척">개척</option>
+          <option value="메가디비">메가디비</option>
+          <option value="중기디비">중기디비</option>
+        </select>
+      </div>
+      <div class="field"><label>중분류</label>
+        <input id="c-subCategory" placeholder="중분류 입력" list="subCatList">
+        <datalist id="subCatList"></datalist>
+      </div>
+    </div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>대표</label><input id="c-contact-name" placeholder="홍길동"></div>
+      <div class="field"><label>전화/연락처</label><input id="c-contact-info" placeholder="010-0000-0000"></div>
+    </div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>이메일</label><input id="c-email" type="email" placeholder="contact@company.com"></div>
+      <div class="field"><label>고객 단계</label>
+        <select id="c-status">
+          <option value="잠재고객">잠재고객</option>
+          <option value="가망고객">가망고객</option>
+          <option value="상담고객">상담고객</option>
+          <option value="제안고객">제안고객</option>
+          <option value="계약고객">계약고객</option>
+          <option value="냉담고객">냉담고객</option>
+          <option value="관리고객">관리고객</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">주소</label>
+      <div style="display:grid;grid-template-columns:120px 130px 1fr;gap:8px">
+        <select id="c-sido" onchange="updateSiguOptions()"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+          <option value="">시/도 선택</option>
+          <option>서울시</option><option>경기도</option><option>인천시</option>
+          <option>광주시</option>
+          <option>대전시</option><option>울산시</option><option>세종시</option>
+          <option>강원도</option><option>충북</option><option>충남</option>
+          <option>전북</option><option>전남</option><option>경북</option>
+          <option>경남</option><option>제주도</option>
+        </select>
+        <input id="c-sigu" placeholder="시/구/군" list="siguList"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <datalist id="siguList"></datalist>
+        <input id="c-address-detail" placeholder="상세주소 (동/로/번지)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+      </div>
+      <input type="hidden" id="c-address">
+    </div>
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>명함등록일</label><input id="c-card-date" type="date"></div>
+    </div>
+    <div class="field" style="margin-bottom:16px"><label>메모</label><textarea id="c-memo" placeholder="핵심 정보, 주의사항..."></textarea></div>
+
+    <div class="divider"></div>
+    <div class="sec-title">관련 인물</div>
+    <div id="peopleEdit" style="margin-bottom:10px"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addPersonRow()">+ 관련 인물 추가</button>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('companyModal')">취소</button>
+    <button class="btn btn-primary" onclick="saveCompany()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- Contact Modal -->
+<div class="overlay" id="contactModal">
+<div class="modal">
+  <div class="mhead">
+    <div class="mtitle" id="contactModalTitle">접촉일지 추가</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('contactModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>접촉 일시 *</label><input type="datetime-local" id="ct-datetime"></div>
+      <div class="field"><label>접촉 방법</label>
+        <select id="ct-method">
+          <option value="전화">📞 전화</option>
+          <option value="이메일">✉️ 이메일</option>
+          <option value="미팅">🤝 미팅(대면)</option>
+          <option value="화상">💻 화상 미팅</option>
+          <option value="문자">💬 문자/메신저</option>
+          <option value="방문">🚗 방문</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em">관련 담당자</label>
+        <button class="btn btn-ghost btn-xs" onclick="addCtPersonRow()" type="button">+ 담당자 추가</button>
+      </div>
+      <div id="ctPersonList"></div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>내용 요약 *</label><textarea id="ct-summary" placeholder="주요 논의 내용..."></textarea></div>
+    <div class="field" style="margin-bottom:12px"><label>결정사항</label><input id="ct-decision" placeholder="합의된 내용..."></div>
+    <div class="field" style="margin-bottom:16px"><label>다음 스텝</label><input id="ct-next" placeholder="다음에 할 일..."></div>
+
+    <div style="margin-bottom:4px">
+      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-weight:500;display:block;margin-bottom:8px">자료 첨부</label>
+      <div style="display:flex;gap:7px;margin-bottom:8px">
+        <input type="text" id="ct-link-url" placeholder="URL 링크" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+        <input type="text" id="ct-link-name" placeholder="자료명" style="width:120px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+        <button class="btn btn-ghost btn-sm" onclick="addContactLink()">추가</button>
+      </div>
+      <div class="drop-zone" id="ctDrop" onclick="document.getElementById('ctFile').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        📎 파일 드래그 또는 클릭 첨부 (최대 2MB)
+      </div>
+      <input type="file" id="ctFile" style="display:none" multiple onchange="handleFileInput(event)">
+      <div id="ctAttachList" style="margin-top:7px;display:flex;flex-wrap:wrap;gap:5px"></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('contactModal')">취소</button>
+    <button class="btn btn-primary" onclick="saveContact()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- Appointment Modal -->
+<div class="overlay" id="apptModal">
+<div class="modal" style="max-width:460px">
+  <div class="mhead">
+    <div class="mtitle">📅 약속 추가</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('apptModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="frow" style="margin-bottom:12px">
+      <div class="field"><label>날짜 *</label><input type="date" id="appt-date"></div>
+      <div class="field"><label>시간</label><input type="time" id="appt-time" value="10:00"></div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>고객사 연결</label>
+      <select id="appt-company">
+        <option value="">-- 회사 선택 --</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>내용 *</label>
+      <input id="appt-title" placeholder="예: 제안서 PT 미팅">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>메모</label>
+      <textarea id="appt-memo" placeholder="장소, 준비사항 등..." style="min-height:60px"></textarea>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('apptModal')">취소</button>
+    <button class="btn btn-primary" onclick="saveAppt()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- Company Select Modal -->
+<div class="overlay" id="coSelectModal">
+<div class="modal" style="max-width:400px">
+  <div class="mhead">
+    <div class="mtitle">회사 선택</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('coSelectModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="field" style="margin-bottom:0">
+      <label>접촉할 회사</label>
+      <select id="coSelectList" style="width:100%">
+        <option value="">-- 선택 --</option>
+      </select>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('coSelectModal')">취소</button>
+    <button class="btn btn-primary" onclick="confirmCoSelect()">확인</button>
+  </div>
+</div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="overlay" id="delConfirmModal">
+<div class="modal" style="max-width:360px">
+  <div class="mhead">
+    <div class="mtitle">🗑 고객사 삭제</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('delConfirmModal')">✕</button>
+  </div>
+  <div class="mbody" style="text-align:center;padding:16px 0 8px">
+    <div style="font-size:14px;font-weight:500;margin-bottom:6px" id="delConfirmMsg">이 회사를 삭제할까요?</div>
+    <div style="font-size:12px;color:var(--text3)">회사 정보와 접촉일지가 모두 삭제됩니다.</div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('delConfirmModal')">취소</button>
+    <button class="btn btn-sm" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;padding:7px 16px;border-radius:var(--rs);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">삭제</button>
+  </div>
+</div>
+</div>
+
+<!-- Reset Modal -->
+<div class="overlay" id="resetModal">
+<div class="modal" style="max-width:400px">
+  <div class="mhead">
+    <div class="mtitle">⚠️ 전체 데이터 초기화</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('resetModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:36px;margin-bottom:12px">🗑</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:8px">모든 데이터가 삭제됩니다</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">
+        회사 정보, 접촉일지, 할일 목록이<br>
+        <b style="color:var(--red)">전부 삭제</b>되며 복구할 수 없습니다.<br><br>
+        삭제 전 <b>내보내기</b>로 백업을 권장합니다.
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="exportData()">📤 먼저 백업하기</button>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('resetModal')">취소</button>
+    <button class="btn btn-sm" onclick="doReset()" style="background:var(--red);color:#fff;padding:7px 16px;border:none;border-radius:var(--rs);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">전체 삭제</button>
+  </div>
+</div>
+</div>
+
+<!-- Excel Import Modal -->
+<div class="overlay" id="excelModal">
+<div class="modal modal-lg">
+  <div class="mhead">
+    <div class="mtitle">📊 엑셀 고객 파일 가져오기</div>
+    <button class="btn btn-ghost btn-icon btn-sm" onclick="closeModal('excelModal')">✕</button>
+  </div>
+  <div class="mbody">
+    <div id="excelStep1">
+      <div class="drop-zone" id="excelDrop"
+           onclick="document.getElementById('excelFile').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleExcelDrop(event)">
+        📊 .xlsx / .xls / .csv 파일을 드래그하거나 클릭하세요
+      </div>
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelFile(event)">
+    </div>
+    <div id="excelStep2" style="display:none">
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">파일 미리보기 (처음 3행)</div>
+        <div style="overflow-x:auto" id="excelPreview"></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:10px">컬럼 매핑</div>
+        <div id="colMapping"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-ghost" onclick="closeModal('excelModal')">취소</button>
+    <button class="btn btn-primary" id="excelImportBtn" style="display:none" onclick="doExcelImport()">가져오기</button>
+  </div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+// ────────────────────────────────────────
+// DB
+// ────────────────────────────────────────
+const DB = {
+  g(k){return JSON.parse(localStorage.getItem('crm_'+k)||'[]')},
+  s(k,v){localStorage.setItem('crm_'+k,JSON.stringify(v));if(typeof scheduleSave!=='undefined')scheduleSave();},
+  get companies(){return this.g('companies')},set companies(v){this.s('companies',v)},
+  get contacts(){return this.g('contacts')},set contacts(v){this.s('contacts',v)},
+  get todos(){return this.g('todos')},set todos(v){this.s('todos',v)},
+  get emails(){return this.g('emails')},set emails(v){this.s('emails',v)},
+};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+// ────────────────────────────────────────
+// SAMPLE DATA
+// ────────────────────────────────────────
+function initSample(){
+  if(DB.companies.length>0)return;
+  const companies=[
+    {id:'c1',name:'(주)스마트팩토리',industry:'소개',
+     contactName:'김철수 이사',contactInfo:'010-1234-5678',email:'kim@smartf.co.kr',
+     address:'경기도 안산시 성곡로 123',cardDate:'2025-01-10',status:'계약고객',lastContact:'2025-03-20',
+     nextAction:'4/5 현장실사 동행 및 진단보고서 초안 전달',
+     memo:'2공장 스마트화 프로젝트. 예산 3억 승인. 박부장(생산팀장)도 의사결정자.',
+     createdAt:'2025-01-10',
+     people:[
+       {id:'p1',name:'김철수',role:'이사',type:'고객사 담당자',contact:'010-1234-5678'},
+       {id:'p2',name:'박민수',role:'생산팀장',type:'고객사 담당자',contact:'010-2222-3333'},
+       {id:'p3',name:'이회계',role:'세무사',type:'고객사 세무사',contact:'02-111-2222'},
+       {id:'p4',name:'정전문',role:'스마트팩토리 전문가',type:'자사 전문가',contact:'010-9090-0000'},
+     ]},
+    {id:'c2',name:'바이오텍코리아',industry:'개척',
+     contactName:'이지은 팀장',contactInfo:'02-555-0100',email:'lee@biotek.kr',
+     address:'서울시 강남구 테헤란로 456',cardDate:'2025-02-01',status:'가망고객',lastContact:'2025-03-15',
+     nextAction:'3/28 제안서 발송 후 미팅 일정 조율',
+     memo:'임상데이터 관리 개선 니즈. 예산 미확정. 경쟁사 2곳 접촉중.',
+     createdAt:'2025-02-01',people:[]},
+    {id:'c3',name:'그린에너지솔루션',industry:'메가디비',
+     contactName:'박민준 대표',contactInfo:'010-9876-5432',email:'park@green-e.com',
+     address:'서울시 중구 남대문로 789',cardDate:'2025-01-20',status:'상담고객',lastContact:'2025-02-28',
+     nextAction:'3월말 내부검토 회신 — 팔로업 필요',
+     memo:'ESG 보고서 컨설팅. 대표 직접 의사결정. 장기계약 가능성 높음.',
+     createdAt:'2025-01-20',people:[]},
+    {id:'c4',name:'핀테크스타트업A',industry:'중기디비',
+     contactName:'최수진 CEO',contactInfo:'',email:'choi@fintecha.io',
+     address:'서울시 강서구 마곡중앙로 100',cardDate:'2024-11-01',status:'냉담고객',lastContact:'2024-12-10',nextAction:'',
+     memo:'시리즈A 이후 조직개편으로 무기한 연기. 6개월 후 재접촉.',
+     createdAt:'2024-11-01',people:[]},
+    {id:'c5',name:'대한물류네트웍스',industry:'소개',
+     contactName:'정호철 본부장',contactInfo:'031-800-2200',email:'jung@dklogis.co.kr',
+     address:'경기도 용인시 동백중앙로 50',cardDate:'2024-09-15',status:'관리고객',lastContact:'2025-03-10',
+     nextAction:'최종보고서 4/15 제출',
+     memo:'1단계 완료. 2단계 계약 협의 예정. 레퍼런스 동의 완료.',
+     createdAt:'2024-09-15',people:[]}
+  ];
+  const contacts=[
+    {id:'ct1',companyId:'c1',datetime:'2025-03-20T14:00',method:'미팅',
+     personName:'김철수 이사, 박민수 부장',personPhone:'010-1234-5678',person:'김철수 이사, 박민수 부장 (010-1234-5678)',
+     summary:'2공장 스마트화 요구사항 심층 인터뷰. 자동화 대상 라인 3개 확정.',
+     decision:'1차 현장실사 4월 5일 확정. 진단보고서 형식 샘플 요청.',
+     nextStep:'4/5 방문 전까지 보고서 템플릿 발송',
+     attachments:[{type:'link',name:'RFP.pdf',url:'https://example.com/rfp'}]},
+    {id:'ct2',companyId:'c1',datetime:'2025-03-05T10:30',method:'전화',
+     personName:'김철수 이사',personPhone:'010-1234-5678',person:'김철수 이사 (010-1234-5678)',
+     summary:'프로젝트 일정 조율. 3월 중 킥오프 희망.',
+     decision:'3월 20일 킥오프 미팅 확정.',
+     nextStep:'미팅 아젠다 사전 공유',attachments:[]},
+    {id:'ct3',companyId:'c2',datetime:'2025-03-15T16:00',method:'화상',
+     personName:'이지은 팀장',personPhone:'02-555-0100',person:'이지은 팀장 (02-555-0100)',
+     summary:'임상데이터 관리 현황 청취. 엑셀+이메일 기반 운영으로 오류율 높음.',
+     decision:'제안서 제출 후 4월 초 대면 PT.',
+     nextStep:'3/28까지 제안서 작성 및 발송',
+     attachments:[{type:'link',name:'인터뷰 노트',url:'https://docs.google.com'}]},
+    {id:'ct4',companyId:'c3',datetime:'2025-02-28T11:00',method:'미팅',
+     personName:'박민준 대표',personPhone:'010-9876-5432',person:'박민준 대표 (010-9876-5432)',
+     summary:'ESG 보고서 범위 논의. IFRS S1·S2 기준 적용 필요.',
+     decision:'내부 이사회 후 3월말 회신.',
+     nextStep:'3월 31일 팔로업',attachments:[]},
+    {id:'ct5',companyId:'c5',datetime:'2025-03-10T09:00',method:'이메일',
+     personName:'정호철 본부장',personPhone:'031-800-2200',person:'정호철 본부장 (031-800-2200)',
+     summary:'1단계 결과 검토 완료. 만족도 높음. 2단계 제안 요청.',
+     decision:'2단계 SOW 4/1까지 제출 요청.',
+     nextStep:'SOW 및 견적서 작성',
+     attachments:[{type:'link',name:'최종보고서',url:'https://example.com/report'}]},
+  ];
+  const todos=[
+    {id:'t1',text:'스마트팩토리 진단보고서 템플릿 발송',done:false},
+    {id:'t2',text:'바이오텍 제안서 작성',done:false},
+    {id:'t3',text:'그린에너지 팔로업 이메일',done:true},
+  ];
+  DB.companies=companies; DB.contacts=contacts; DB.todos=todos;
+}
+// ── 기존 localStorage 데이터에 누락 필드 보정
+function migrateData(){
+  const companies = DB.companies;
+  let changed = false;
+  const fallback = ['서울시 강남구 테헤란로 1','서울시 중구 세종대로 1',
+    '경기도 수원시 팔달구 1'];
+  companies.forEach((co,i)=>{
+    if(!co.address){ co.address=fallback[i%fallback.length]; changed=true; }
+    if(!co.cardDate && co.createdAt){ co.cardDate=co.createdAt.slice(0,10); changed=true; }
+  });
+  if(changed) DB.companies=companies;
+}
+
+
+// ────────────────────────────────────────
+// PAGE NAV
+// ────────────────────────────────────────
+let curPage='companies', curDetailId=null, searchQ='', viewMode='list';
+let _lastFiltered=[];
+const navIds=['companies','recent','actions','calendar'];
+const pageNames={companies:'고객사 정보',recent:'접촉일지',actions:'다음 액션',calendar:'캘린더',email:'이메일'};
+const pageActions={
+  companies:{label:'+ 회사 추가',fn:()=>openCompanyModal()},
+  recent:{label:'+ 접촉 기록',fn:()=>openContactModalGlobal()},
+  actions:{label:'+ 회사 추가',fn:()=>openCompanyModal()},
+  calendar:{label:'+ 일정 추가',fn:()=>openApptModal()},
+
+  detail:{label:'+ 접촉일지',fn:()=>openContactModal()},
+};
+
+function showPage(name, extra){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(document.getElementById('nav-'+name)) document.getElementById('nav-'+name).classList.add('active');
+  curPage=name;
+
+  const ttl=document.getElementById('topbar-title');
+  const btn=document.getElementById('topbar-btn');
+  if(name==='detail'&&extra){
+    curDetailId=extra;
+    const c=DB.companies.find(x=>x.id===extra);
+    ttl.textContent=c?c.name:'상세';
+    btn.textContent='+ 접촉일지';
+    btn.onclick=openContactModal;
+    renderDetail(extra);
+  }else{
+    ttl.textContent=pageNames[name]||'';
+    const a=pageActions[name];
+    if(a){btn.textContent=a.label;btn.onclick=a.fn}
+  }
+  if(name==='companies')renderCompanies();
+  if(name==='recent')renderRecent();
+  if(name==='actions')renderActions();
+  if(name==='calendar')renderCalendar();
+
+  updateBadges();
+}
+
+function updateBadges(){
+  const contacts=DB.contacts;
+  document.getElementById('badge-recent').textContent=contacts.length;
+  const actions=DB.companies.filter(c=>c.nextAction&&c.status!=='냉담고객').length;
+  document.getElementById('badge-actions').textContent=actions;
+}
+
+// ────────────────────────────────────────
+// TODO
+// ────────────────────────────────────────
+function renderTodo(){
+  const todos=DB.todos;
+  const done=todos.filter(t=>t.done).length;
+  document.getElementById('todo-progress').textContent=`${done}/${todos.length}`;
+  document.getElementById('todoList').innerHTML=todos.map(t=>`
+    <div class="todo-item ${t.done?'done':''}" onclick="toggleTodo('${t.id}')">
+      <div class="todo-check">${t.done?'✓':''}</div>
+      <span class="todo-text" style="flex:1">${t.text}</span>
+      <span class="todo-del" onclick="event.stopPropagation();deleteTodo('${t.id}')">✕</span>
+    </div>`).join('');
+}
+function addTodo(){
+  const input=document.getElementById('todoInput');
+  const text=input.value.trim();
+  if(!text)return;
+  const todos=DB.todos;
+  todos.push({id:uid(),text,done:false});
+  DB.todos=todos; input.value=''; renderTodo();
+}
+function toggleTodo(id){
+  const todos=DB.todos;
+  const t=todos.find(x=>x.id===id);
+  if(t)t.done=!t.done;
+  DB.todos=todos; renderTodo();
+}
+function deleteTodo(id){
+  DB.todos=DB.todos.filter(x=>x.id!==id); renderTodo();
+}
+
+// ────────────────────────────────────────
+// COMPANIES
+// ────────────────────────────────────────
+// ══════════════════════════════════════════════
+// FILTER STATE — 단순 변수, DOM과 완전 분리
+// ══════════════════════════════════════════════
+const F = {
+  stages:   new Set(), // 선택된 고객단계
+  category: '',        // 선택된 시/도 (address 대분류)
+  subCat:   '',        // 선택된 시/구 (address 중분류)
+  route:    '',        // 선택된 경로 (industry)
+  dateFrom: '',
+  dateTo:   '',
+  showAll:  false,     // true = 전체 보기, false = 활성 회사만
+};
+
+// ── 단계 버튼 색상 맵
+const STAGE_BG = {잠재고객:'var(--blue-d)',가망고객:'var(--teal-d)',상담고객:'var(--yellow-d)',제안고객:'var(--orange-d)',계약고객:'var(--green-d)',냉담고객:'var(--surface3)',관리고객:'var(--purple-d)'};
+const STAGE_FG = {잠재고객:'var(--blue)',가망고객:'var(--teal)',상담고객:'var(--yellow)',제안고객:'var(--orange)',계약고객:'var(--green)',냉담고객:'var(--text2)',관리고객:'var(--purple)'};
+
+// ── 필터 초기 렌더 (페이지 로드 1회)
+function initFilters(){
+  const stages=['잠재고객','가망고객','상담고객','제안고객','계약고객','냉담고객','관리고객'];
+  document.getElementById('stageFilters').innerHTML = stages.map(s=>`
+    <button id="sf-${s}" onclick="toggleStage('${s}')"
+      style="padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;
+             border:1px solid var(--border2);background:transparent;
+             color:var(--text3);cursor:pointer;transition:all .15s">${s}</button>`
+  ).join('');
+  buildCategoryButtons();
+  buildRouteButtons();
+}
+
+// ── 고객단계 토글
+function toggleStage(s){
+  if(F.stages.has(s)) F.stages.delete(s); else F.stages.add(s);
+  document.querySelectorAll('[id^="sf-"]').forEach(btn=>{
+    const st = btn.id.slice(3);
+    if(F.stages.has(st)){
+      btn.style.background = STAGE_BG[st]||'var(--ac-dim)';
+      btn.style.color      = STAGE_FG[st]||'var(--ac2)';
+      btn.style.borderColor= STAGE_FG[st]||'var(--ac)';
+    } else {
+      btn.style.background ='transparent';
+      btn.style.color      ='var(--text3)';
+      btn.style.borderColor='var(--border2)';
+    }
+  });
+  doFilter();
+}
+
+// ── 지역 버튼 재구성 (대분류=시/도, 중분류=시/구 — 주소 기반)
+// 알려진 시/도 목록 (정규화된 이름)
+const SIDO_LIST = ['서울시','경기도','인천시','광주시','대전시','울산시','세종시',
+  '강원도','충북','충남','전북','전남','경북','경남','제주도'];
+
+// 시/도 원문 → 정규화 매핑
+const SIDO_MAP = {
+  '서울특별시':'서울시','서울시':'서울시',
+  '경기도':'경기도',
+  '인천광역시':'인천시','인천시':'인천시',
+  '광주광역시':'광주시','광주시':'광주시',
+  '대전광역시':'대전시','대전시':'대전시',
+  '울산광역시':'울산시','울산시':'울산시',
+  '세종특별자치시':'세종시','세종시':'세종시',
+  '강원특별자치도':'강원도','강원도':'강원도',
+  '충청북도':'충북','충북':'충북',
+  '충청남도':'충남','충남':'충남',
+  '전라북도':'전북','전북':'전북',
+  '전라남도':'전남','전남':'전남',
+  '경상북도':'경북','경북':'경북',
+  '경상남도':'경남','경남':'경남',
+  '제주특별자치도':'제주도','제주도':'제주도',
+};
+
+function normAddr(s){
+  if(!s) return '';
+  // 1단계: 원문 명칭 정규화
+  let addr = s;
+  Object.keys(SIDO_MAP).forEach(k=>{ addr = addr.replace(k, SIDO_MAP[k]); });
+
+  // 2단계: 첫 토큰이 시/도인지 확인
+  const toks = addr.trim().split(/\s+/);
+  if(SIDO_LIST.includes(toks[0])) return addr.trim();
+
+  // 3단계: 첫 토큰이 시/도가 아니면 전체 주소에서 시/도 찾아서 앞으로 이동
+  for(const sido of SIDO_LIST){
+    const idx = addr.indexOf(sido);
+    if(idx > 0){
+      // sido 이후 부분을 앞으로 재구성
+      return addr.slice(idx).trim();
+    }
+  }
+  // 4단계: 시/도를 찾지 못하면 원문 반환 (필터에서 제외됨)
+  return addr.trim();
+}
+
+function buildCategoryButtons(){
+  const catEl = document.getElementById('categoryButtons');
+  const subEl = document.getElementById('subCatButtons');
+  if(!catEl || !subEl) return;
+
+  // ── 대분류: normAddr 처리 후 첫 번째 토큰 (반드시 시/도여야 함)
+  const catSet = new Set();
+  DB.companies.forEach(co=>{
+    const norm = normAddr(co.address||'');
+    const tok = norm.trim().split(/\s+/);
+    // SIDO_LIST에 있는 값만 버튼으로 표시
+    if(tok[0] && SIDO_LIST.includes(tok[0])) catSet.add(tok[0]);
+  });
+
+  if(!catSet.size){
+    catEl.innerHTML = '<span style="font-size:11px;color:var(--text3);font-style:italic">주소 등록 후 활성화됩니다</span>';
+    subEl.innerHTML = '';
+    return;
+  }
+
+  // ── 시/도 버튼 렌더
+  catEl.innerHTML = [...catSet].sort().map(s=>{
+    const on = (F.category===s);
+    return `<button onclick="selectCategory('${s}')"
+      style="padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;
+             border:1px solid ${on?'var(--ac)':'var(--border2)'};
+             background:${on?'var(--ac-dim)':'transparent'};
+             color:${on?'var(--ac2)':'var(--text2)'};">${s}</button>`;
+  }).join('');
+
+  // ── 중분류: 두 번째 토큰 (시/구), F.category 선택 시에만
+  if(!F.category){ subEl.innerHTML=''; return; }
+
+  const subSet = new Set();
+  DB.companies.forEach(co=>{
+    const norm = normAddr(co.address||'').trim();
+    if(norm.startsWith(F.category)){
+      const tok = norm.split(/\s+/);
+      if(tok[1]) subSet.add(tok[1]);
+    }
+  });
+
+  subEl.innerHTML = subSet.size
+    ? [...subSet].sort().map(s=>{
+        const on = (F.subCat===s);
+        return `<button onclick="selectSubCat('${s}')"
+          style="padding:2px 9px;border-radius:20px;font-size:10px;font-weight:500;cursor:pointer;transition:all .15s;
+                 border:1px solid ${on?'var(--ac)':'var(--border)'};
+                 background:${on?'var(--ac-dim)':'var(--surface2)'};
+                 color:${on?'var(--ac2)':'var(--text2)'};">${s}</button>`;
+      }).join('')
+    : '';
+}
+
+// ── 경로 버튼 재구성 (industry 필드)
+function buildRouteButtons(){
+  const el = document.getElementById('routeFilters');
+  if(!el) return;
+  const routes = ['소개','개척','메가디비','중기디비'];
+  el.innerHTML = routes.map(s=>{
+    const on = (F.route===s);
+    return `<button onclick="selectRoute('${s}')"
+      style="padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;
+             border:1px solid ${on?'var(--yellow)':'var(--border2)'};
+             background:${on?'var(--yellow-d)':'transparent'};
+             color:${on?'var(--yellow)':'var(--text3)'};">${s}</button>`;
+  }).join('');
+}
+
+// ── 회사 추가 모달: 대분류 선택 시 중분류 datalist 자동완성
+function updateSubCatOptions(){
+  const industry = (document.getElementById('c-industry')||{value:''}).value;
+  const dl = document.getElementById('subCatList');
+  if(!dl) return;
+  const subSet = new Set();
+  DB.companies.forEach(co=>{
+    if(industry && co.industry===industry && co.subCategory) subSet.add(co.subCategory);
+  });
+  dl.innerHTML = [...subSet].sort().map(s=>`<option value="${s}">`).join('');
+}
+
+// ── 회사 추가 모달: 시/도 선택 시 시/구 datalist 자동완성
+function updateSiguOptions(){
+  const sido = (document.getElementById('c-sido')||{value:''}).value;
+  const dl = document.getElementById('siguList');
+  if(!dl) return;
+  const siguSet = new Set();
+  DB.companies.forEach(co=>{
+    if(sido && (co.address||'').startsWith(sido)){
+      const tok = co.address.trim().split(/\s+/);
+      if(tok[1]) siguSet.add(tok[1]);
+    }
+  });
+  dl.innerHTML = [...siguSet].sort().map(s=>`<option value="${s}">`).join('');
+}
+
+// ── 시/도 선택
+function selectCategory(s){
+  if(F.category===s){ F.category=''; } else { F.category=s; }
+  F.subCat='';
+  buildCategoryButtons();
+  doFilter();
+}
+
+// ── 시/구 선택
+function selectSubCat(s){
+  if(F.subCat===s){ F.subCat=''; } else { F.subCat=s; }
+  buildCategoryButtons();
+  doFilter();
+}
+
+// ── 경로 선택
+function selectRoute(s){
+  if(F.route===s){ F.route=''; } else { F.route=s; }
+  buildRouteButtons();
+  doFilter();
+}
+
+// ── 뷰 모드 전환 (카드/리스트)
+function setViewMode(mode){
+  viewMode = mode;
+  renderCompanies();
+}
+
+// ── 엑셀 다운로드
+function exportExcel(){
+  if(!_lastFiltered || !_lastFiltered.length){
+    showToast('다운로드할 데이터가 없습니다', true);
+    return;
+  }
+  var headers = ['#','회사명','담당자','연락처','이메일','주소','고객단계','경로','명함등록일','최근접촉일','메모'];
+  var rows = _lastFiltered.map(function(co, idx){
+    // 메모에서 시스템 태그 제거 (정규식 대신 split 방식)
+    var memo = (co.memo||'');
+    memo = memo.split('\n').filter(function(line){
+      return line.indexOf('[중분류]') === -1 && line.indexOf('[주소]') === -1;
+    }).join(' ').trim().slice(0, 60);
+    return [
+      idx+1,
+      co.name||'',
+      co.contactName||'',
+      co.contactInfo||'',
+      co.email||'',
+      co.address||'',
+      co.status||'',
+      co.industry||'',
+      co.cardDate||'',
+      co.lastContact||'',
+      memo
+    ];
+  });
+  var wsData = [headers].concat(rows);
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    {wch:4},{wch:22},{wch:12},{wch:16},{wch:24},
+    {wch:28},{wch:10},{wch:8},{wch:12},{wch:12},{wch:30}
+  ];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '고객사목록');
+  var now = new Date();
+  var mm = now.getMonth()+1; var dd = now.getDate();
+  var dateStr = now.getFullYear()+(mm<10?'0':'')+mm+(dd<10?'0':'')+dd;
+  var filterTag = '';
+  if(F.category) filterTag += '_'+F.category;
+  if(F.route)    filterTag += '_'+F.route;
+  XLSX.writeFile(wb, 'CRM_고객사목록_'+dateStr+filterTag+'.xlsx');
+  showToast('엑셀 파일 다운로드됨 ('+_lastFiltered.length+'개사)');
+}
+
+// ── 인쇄
+function printList(){
+  // 인쇄 헤더
+  var hdr = document.getElementById('printHeader');
+  if(hdr){
+    var now = new Date();
+    var filters = [];
+    if(F.stages.size>0) filters.push('단계: '+[...F.stages].join('·'));
+    if(F.category) filters.push('지역: '+F.category+(F.subCat?' '+F.subCat:''));
+    if(F.route) filters.push('경로: '+F.route);
+    if(F.dateFrom||F.dateTo) filters.push('명함등록: '+(F.dateFrom||'')+'~'+(F.dateTo||''));
+    var filterStr = filters.length ? ' | 필터: '+filters.join(', ') : ' | 전체';
+    hdr.innerHTML = '<h2>고객사 목록</h2><p>출력일: '
+      +now.getFullYear()+'.'+(now.getMonth()+1)+'.'+now.getDate()
+      +' | 총 '+_lastFiltered.length+'개사'+filterStr+'</p>';
+  }
+  // 테이블 강제 표시
+  var tableEl = document.getElementById('companyTable');
+  var gridEl  = document.getElementById('companyGrid');
+  if(tableEl) tableEl.style.display = 'block';
+  if(gridEl)  gridEl.style.display  = 'none';
+  // 리스트 렌더 후 인쇄
+  renderListView(_lastFiltered);
+  setTimeout(function(){ window.print(); }, 500);
+}
+
+// ── 삭제 확인 모달
+function openDelConfirm(id, onConfirm){
+  var co = DB.companies.find(function(x){ return x.id===id; });
+  var msg = document.getElementById('delConfirmMsg');
+  if(msg && co) msg.textContent = '"' + co.name + '" 을(를) 삭제할까요?';
+  var btn = document.getElementById('delConfirmBtn');
+  if(btn){
+    btn.onclick = function(){
+      closeModal('delConfirmModal');
+      onConfirm();
+    };
+  }
+  openModal('delConfirmModal');
+}
+
+// ── 리스트에서 활성 토글
+function toggleActive(btn){
+  var id = btn.getAttribute('data-id');
+  if(!id) return;
+  var cos = DB.companies;
+  var co = cos.find(function(x){ return x.id===id; });
+  if(!co) return;
+  var isActive = !!(co.lastContact || co.nextAction);
+  if(isActive){
+    // 비활성으로 — lastContact, nextAction 초기화
+    co.lastContact = '';
+    co.nextAction  = '';
+  } else {
+    // 활성으로 — 오늘 날짜를 lastContact로 설정
+    co.lastContact = new Date().toISOString().slice(0,10);
+  }
+  DB.companies = cos;
+  showToast(isActive ? '비활성으로 변경됨' : '활성으로 변경됨');
+  renderCompanies();
+  updateBadges();
+}
+
+// ── 전체보기 / 활성만 토글
+function setShowAll(val){
+  F.showAll = val;
+  renderCompanies();
+}
+
+// ── 명함등록일 필터 적용
+function applyFilters(){
+  F.dateFrom = (document.getElementById('cardDateFrom')||{value:''}).value||'';
+  F.dateTo   = (document.getElementById('cardDateTo')||{value:''}).value||'';
+  doFilter();
+}
+
+// ── 실제 필터 실행 (상태 F 기준)
+function doFilter(){
+  F.dateFrom = (document.getElementById('cardDateFrom')||{value:''}).value||'';
+  F.dateTo   = (document.getElementById('cardDateTo')||{value:''}).value||'';
+  renderCompanies();
+}
+
+// ── 전체 초기화
+function clearFilters(){
+  F.stages.clear();
+  F.category=''; F.subCat='';
+  F.route='';
+  F.dateFrom=''; F.dateTo='';
+  F.showAll=false;
+  const df=document.getElementById('cardDateFrom'); if(df)df.value='';
+  const dt=document.getElementById('cardDateTo');   if(dt)dt.value='';
+  document.querySelectorAll('[id^="sf-"]').forEach(b=>{
+    b.style.background='transparent';b.style.color='var(--text3)';b.style.borderColor='var(--border2)';
+  });
+  buildCategoryButtons();
+  buildRouteButtons();
+  renderCompanies();
+}
+
+// ── 날짜 문자열 정규화 (엑셀 숫자값, 다양한 형식 처리)
+function parseCardDate(val){
+  if(!val) return '';
+  const s = String(val).trim();
+  // 엑셀 시리얼 날짜 숫자 (40000~55000 범위)
+  const num = Number(s);
+  if(!isNaN(num) && num > 40000 && num < 60000){
+    // 엑셀 날짜 → JS Date (엑셀은 1900-01-01 기준, JS는 1970-01-01 기준)
+    const msPerDay = 86400000;
+    const excelEpoch = new Date(1899, 11, 30).getTime();
+    const d = new Date(excelEpoch + num * msPerDay);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  // YYYY.MM.DD 또는 YYYY/MM/DD → YYYY-MM-DD
+  const m1 = s.match(/^(\d{4})[.\/](\d{1,2})[.\/](\d{1,2})$/);
+  if(m1) return m1[1]+'-'+m1[2].padStart(2,'0')+'-'+m1[3].padStart(2,'0');
+  // YYYY-MM-DD 이미 정상
+  const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m2) return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+  // 그 외 형식 시도
+  const d = new Date(s);
+  if(!isNaN(d.getTime()) && d.getFullYear() > 1990){
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  return s; // 파싱 불가 시 원문 반환
+}
+
+// ── nextStep에서 날짜 추출 (한국어 포함 다양한 형식)
+function parseNextStepDate(text, baseYear){
+  if(!text) return null;
+  var y = baseYear || new Date().getFullYear();
+  // YYYY-MM-DD
+  var m = text.match(/(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
+  if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  // M월 D일 또는 M월D일
+  m = text.match(/(\d{1,2})월\s*(\d{1,2})일/);
+  if(m) return y+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  // M/D 또는 M-D
+  m = text.match(/^(\d{1,2})[\/-](\d{1,2})\b/);
+  if(m) return y+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  // 텍스트 안의 M/D
+  m = text.match(/\b(\d{1,2})\/(\d{1,2})\b/);
+  if(m) return y+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  return null;
+}
+
+// ── 전역 유틸: 검색어 하이라이트
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function hlStr(lq, t){
+  if(!lq||!t) return t||'';
+  try{ return String(t).replace(new RegExp(escRe(lq),'gi'),function(m){return '<mark>'+m+'</mark>';}); }
+  catch(e){ return String(t); }
+}
+
+function renderCompanies(q){
+  // ── 검색어 업데이트
+  if(q !== undefined) searchQ = q;
+  const companies = DB.companies;
+  const raw = searchQ.trim();
+  const lq = raw.toLowerCase();
+
+  // ── 1) 검색어 필터
+  let filtered = companies.filter(c => {
+    if(!lq) return true;
+    return c.name.toLowerCase().includes(lq)
+      || (c.contactName||'').toLowerCase().includes(lq)
+      || (c.industry||'').toLowerCase().includes(lq)
+      || (c.subCategory||'').toLowerCase().includes(lq)
+      || (c.memo||'').toLowerCase().includes(lq)
+      || (c.email||'').toLowerCase().includes(lq)
+      || (c.address||'').toLowerCase().includes(lq)
+      || (c.people||[]).some(p => (p.name||'').toLowerCase().includes(lq));
+  });
+
+  // ── 2) 고객단계 필터
+  if(F.stages.size > 0)
+    filtered = filtered.filter(co => F.stages.has(co.status));
+
+  // ── 3) 지역 필터 (대분류=시/도, 중분류=시/구 — 주소 기반)
+  if(F.category) filtered = filtered.filter(co => normAddr(co.address||'').startsWith(F.category));
+  if(F.subCat)   filtered = filtered.filter(co => normAddr(co.address||'').includes(F.subCat));
+  // ── 3-b) 경로 필터 (industry)
+  if(F.route) filtered = filtered.filter(co => (co.industry||'') === F.route);
+
+  // ── 4) 명함등록일 필터
+  if(F.dateFrom) filtered = filtered.filter(co => co.cardDate && co.cardDate >= F.dateFrom);
+  if(F.dateTo)   filtered = filtered.filter(co => co.cardDate && co.cardDate <= F.dateTo);
+
+
+  // ── Stats (전체 회사 기준)
+  const sc = {잠재고객:0,가망고객:0,상담고객:0,제안고객:0,계약고객:0,냉담고객:0,관리고객:0};
+  companies.forEach(c => { if(sc[c.status] !== undefined) sc[c.status]++; });
+  const active   = companies.filter(co => co.lastContact || co.nextAction).length;
+  const pipeline = sc['가망고객'] + sc['상담고객'] + sc['제안고객'];
+  const week7    = DB.contacts.filter(c => (new Date()-new Date(c.datetime))/(864e5) <= 7).length;
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><div class="stat-label">전체 회사</div><div class="stat-val">${companies.length}</div><div class="stat-sub">등록됨</div></div>
+    <div class="stat"><div class="stat-label">활성 고객</div><div class="stat-val" style="color:var(--green)">${active}</div><div class="stat-sub">접촉+액션</div></div>
+    <div class="stat"><div class="stat-label">파이프라인</div><div class="stat-val" style="color:var(--yellow)">${pipeline}</div><div class="stat-sub">상담+제안</div></div>
+    <div class="stat"><div class="stat-label">이번주 접촉</div><div class="stat-val" style="color:var(--ac2)">${week7}</div><div class="stat-sub">최근 7일</div></div>`;
+
+  const grid  = document.getElementById('companyGrid');
+  const empty = document.getElementById('coEmpty');
+
+  if(!filtered.length){
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // ── 기본 모드: 활성 회사만 (lastContact 있거나 nextAction 있는 회사)
+  const hasActivity = co => co.lastContact || co.nextAction;
+  const activeCount = filtered.filter(hasActivity).length;
+  const el_ac = document.getElementById('activeCount');
+  if(el_ac) el_ac.textContent = '활성 ' + activeCount + '건 / 전체 ' + filtered.length + '건';
+
+  if(!F.showAll){
+    filtered = filtered.filter(hasActivity);
+  }
+
+  // ── 정렬: 명함등록일 필터 사용 중이면 cardDate 최신순, 아니면 기본 정렬
+  if(F.dateFrom || F.dateTo){
+    filtered.sort((a,b) => {
+      const da = a.cardDate ? new Date(parseCardDate(a.cardDate)||a.cardDate) : new Date(0);
+      const db = b.cardDate ? new Date(parseCardDate(b.cardDate)||b.cardDate) : new Date(0);
+      const va = isNaN(da) ? 0 : da.getTime();
+      const vb = isNaN(db) ? 0 : db.getTime();
+      return vb - va;
+    });
+  } else {
+    filtered.sort((a,b) => {
+      const aHasAction = a.nextAction ? 1 : 0;
+      const bHasAction = b.nextAction ? 1 : 0;
+      if(bHasAction !== aHasAction) return bHasAction - aHasAction;
+      const da = a.lastContact ? new Date(a.lastContact) : new Date(0);
+      const db = b.lastContact ? new Date(b.lastContact) : new Date(0);
+      return db - da;
+    });
+  }
+
+  // ── 보기 토글 버튼 스타일 동기화
+  const btnActive = document.getElementById('btn-active');
+  const btnAll    = document.getElementById('btn-all');
+  if(btnActive && btnAll){
+    if(F.showAll){
+      btnActive.style.background='transparent'; btnActive.style.color='var(--text3)';
+      btnAll.style.background='var(--ac)';      btnAll.style.color='#fff';
+    } else {
+      btnActive.style.background='var(--ac)';   btnActive.style.color='#fff';
+      btnAll.style.background='transparent';    btnAll.style.color='var(--text3)';
+    }
+  }
+
+  const methodIcon = {전화:'📞',이메일:'✉️',미팅:'🤝',화상:'💻',문자:'💬',방문:'🚗'};
+
+  // 하이라이트 — 전역 함수 escRe/hlStr 사용
+
+  // 현재 필터 목록 저장 (인쇄용)
+  _lastFiltered = filtered;
+
+  // 항상 리스트뷰
+  const tableEl = document.getElementById('companyTable');
+  grid.style.display = 'none';
+  if(tableEl) tableEl.style.display = 'block';
+  renderListView(filtered);
+  return;
+
+  grid.innerHTML = filtered.map(co => {
+    const ctCount    = DB.contacts.filter(x => x.companyId === co.id).length;
+    const peopleCount= (co.people||[]).length;
+    const lastCt     = DB.contacts
+      .filter(x => x.companyId === co.id)
+      .sort((a,b) => new Date(b.datetime) - new Date(a.datetime))[0];
+    return `
+    <div class="co-card" onclick="showPage('detail','${co.id}')">
+      <div class="co-head">
+        <div>
+          <div class="co-name">${hlStr(lq,co.name)}</div>
+          ${co.industry?`<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:var(--surface3);color:var(--text3);border:1px solid var(--border);margin-top:2px;display:inline-block">${co.industry}</span>`:''}
+        </div>
+        <span class="badge s-${co.status}">${co.status}</span>
+      </div>
+      <div class="co-meta">
+        <div class="co-meta-row"><span class="ml">담당자</span><span>${hlStr(lq,co.contactName||'─')}</span></div>
+        <div class="co-meta-row"><span class="ml">이메일</span><span style="color:var(--text3);font-size:11px">${co.email||'─'}</span></div>
+        <div class="co-meta-row">
+          <span class="ml">처음접촉</span>
+          <span class="mono" style="font-size:10px;color:var(--text3)">${co.lastContact||'─'}</span>
+          ${lastCt?`<span class="tag" style="margin-left:4px">${methodIcon[lastCt.method]||'📌'} ${lastCt.method}</span>`:''}
+        </div>
+        ${co.address?`<div class="co-meta-row"><span class="ml">주소</span><span style="color:var(--text3);font-size:11px">${hlStr(lq,co.address)}</span></div>`:''}
+        <div class="co-meta-row">
+          <span class="ml">관련인물</span>
+          <span class="tag">${peopleCount}명</span>
+          <span class="tag" style="margin-left:4px">접촉 ${ctCount}건</span>
+        </div>
+      </div>
+
+    </div>`;
+  }).join('');
+}
+
+function handleSearch(q){
+  searchQ = q;
+  if(curPage === 'companies') renderCompanies(); // searchQ 이미 세팅됨
+  if(curPage === 'recent')    renderRecent(q);
+}
+
+// ────────────────────────────────────────
+// RECENT
+// ────────────────────────────────────────
+function renderRecent(q){
+  window._recItems=[];
+  const lq=(q||searchQ||'').toLowerCase();
+  const contacts=[...DB.contacts].sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+  const filtered=contacts.filter(function(ct){
+    if(!lq)return true;
+    const co=DB.companies.find(function(x){return x.id===ct.companyId;});
+    return (co?co.name:'').toLowerCase().includes(lq)
+      || ct.summary.toLowerCase().includes(lq)
+      || (ct.person||'').toLowerCase().includes(lq)
+      || (ct.personName||'').toLowerCase().includes(lq);
+  });
+  const el=document.getElementById('recentList');
+  const empty=document.getElementById('recentEmpty');
+  if(!filtered.length){el.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const methodIcon={전화:'📞',이메일:'✉️',미팅:'🤝',화상:'💻',문자:'💬',방문:'🚗'};
+
+  el.innerHTML=filtered.slice(0,30).map(function(ct){
+    const co=DB.companies.find(function(x){return x.id===ct.companyId;});
+    const people=(co&&co.people)||[];
+
+    // ── 이번 접촉의 담당자 칩
+    var ctPersons=(ct.persons&&ct.persons.length)?ct.persons
+      :(ct.personName||ct.person)?[{name:ct.personName||ct.person,phone:ct.personPhone||''}]:[];
+    var personChips=ctPersons.map(function(p){
+      return '<span style="display:inline-flex;align-items:center;gap:4px;'
+        +'background:var(--ac-dim);border:1px solid var(--ac);border-radius:20px;'
+        +'padding:1px 8px;font-size:10px;margin-right:4px">'
+        +'<span style="color:var(--ac2);font-weight:500">'+(p.name||'')+'</span>'
+        +(p.phone?'<span style="color:var(--text3);font-family:monospace">'+p.phone+'</span>':'')
+        +'</span>';
+    }).join('');
+
+    // ── 회사 관련인물 카드
+    var peopleCards='';
+    if(people.length){
+      var typeIcon={'고객사 담당자':'👤','고객사 세무사':'📋','자사 전문가':'⭐'};
+      peopleCards=people.map(function(p){
+        return '<div style="display:inline-flex;align-items:center;gap:6px;'
+          +'background:var(--surface3);border:1px solid var(--border);border-radius:6px;'
+          +'padding:3px 9px;margin-right:4px;margin-bottom:2px">'
+          +(typeIcon[p.type]||'👤')
+          +'<span style="font-size:11px;font-weight:500;color:var(--text)">'+(p.name||'')+'</span>'
+          +(p.role?'<span style="font-size:10px;color:var(--text3)">'+p.role+'</span>':'')
+          +(p.contact?'<span style="font-size:10px;color:var(--text2);font-family:monospace">'+p.contact+'</span>':'')
+          +'</div>';
+      }).join('');
+    }
+
+    // ── 고객 단계 뱃지
+    var stageCls={'잠재고객':'s-잠재고객','가망고객':'s-가망고객','상담고객':'s-상담고객',
+      '제안고객':'s-제안고객','계약고객':'s-계약고객','냉담고객':'s-냉담고객','관리고객':'s-관리고객'};
+    var stageBadge=co?'<span class="badge '+( stageCls[co.status]||'')+'">'+co.status+'</span>':'';
+
+    var ri=window._recItems.length;
+    window._recItems.push({ctId:ct.id,companyId:ct.companyId});
+    return '<div class="rec-item">'
+      // 왼쪽: 날짜 + 방법
+      +'<div class="rec-date" style="min-width:68px">'
+      +fmtDate(ct.datetime)
+      +'<br><span style="margin-top:4px;display:block">'+(methodIcon[ct.method]||'📌')+' '+ct.method+'</span>'
+      +'</div>'
+      // 본문
+      +'<div class="rec-body">'
+      // 회사명 + 단계
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      +'<span class="rec-co" style="margin-bottom:0">'+(co?co.name:'?')+'</span>'
+      +stageBadge
+      +(co&&co.address?'<span style="font-size:10px;color:var(--text3)">📍'+co.address.split(' ').slice(0,2).join(' ')+'</span>':'')
+      +'</div>'
+      // 이번 접촉 담당자
+      +(personChips?'<div style="margin-bottom:5px">'+personChips+'</div>':'')
+      // 내용 요약
+      +'<div class="rec-summary">'+ct.summary+'</div>'
+      // 다음 스텝
+      +(ct.nextStep?'<div style="margin-top:4px;font-size:11px;color:var(--ac2)">▶ '+ct.nextStep+'</div>':'')
+      // 회사 관련인물
+      +(peopleCards?'<div style="margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">관련인물</div>'
+        +'<div style="display:flex;flex-wrap:wrap">'+peopleCards+'</div>'
+        +'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">'
+      +'<button onclick="openContactEditModal(window._recItems['+ri+'].ctId)" '
+      +'style="font-size:11px;padding:3px 10px;background:var(--ac-dim);color:var(--ac2);'
+      +'border:1px solid var(--ac);border-radius:var(--rs);cursor:pointer">✏️ 수정</button>'
+      +'<button onclick="showPage(\'detail\',window._recItems['+ri+'].companyId)" '
+      +'style="font-size:11px;padding:3px 10px;background:var(--surface2);color:var(--text2);'
+      +'border:1px solid var(--border);border-radius:var(--rs);cursor:pointer">🏢 회사보기</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ────────────────────────────────────────
+// ACTIONS
+// ────────────────────────────────────────
+function renderActions(){
+  const companies=DB.companies.filter(c=>c.nextAction&&c.status!=='냉담고객');
+  const el=document.getElementById('actionsList');
+  const empty=document.getElementById('actionsEmpty');
+  if(!companies.length){el.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none';
+  el.innerHTML=companies.map(c=>`
+    <div class="rec-item" onclick="showPage('detail','${c.id}')">
+      <div class="rec-date" style="min-width:80px">
+        <span class="badge s-${c.status}" style="font-size:9px">${c.status}</span>
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">${c.lastContact||'─'}</div>
+      </div>
+      <div class="rec-body">
+        <div class="rec-co">${c.name}</div>
+        <div style="font-size:12px;color:var(--ac2);margin-top:3px">▶ ${c.nextAction}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ────────────────────────────────────────
+// DETAIL
+// ────────────────────────────────────────
+// ── 접촉일지 담당자 HTML 생성 (중첩 백틱 회피)
+function renderCtPersonsHTML(ct, people){
+  var ctPersons = (ct.persons&&ct.persons.length) ? ct.persons
+    : (ct.personName||ct.person) ? [{name:ct.personName||ct.person,phone:ct.personPhone||''}] : [];
+  if(!ctPersons.length) return '';
+  var enriched = ctPersons.map(function(cp){
+    if(cp.phone) return cp;
+    var matched = people.filter(function(p){ return p.name&&cp.name&&cp.name.indexOf(p.name.split(' ')[0])>=0; })[0];
+    return matched ? {name:cp.name,phone:matched.contact||'',role:matched.role||''} : cp;
+  });
+  var chips = enriched.map(function(p){
+    var roleSpan = p.role ? '<span style="font-size:10px;color:var(--text3);margin-left:2px">'+p.role+'</span>' : '';
+    var phoneSpan = p.phone ? '<span style="font-size:11px;color:var(--ac2);font-family:monospace;margin-left:4px">'+p.phone+'</span>' : '';
+    return '<div style="display:inline-flex;align-items:center;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;margin-right:4px;margin-bottom:4px">'
+      +'<span style="font-size:12px;font-weight:500;color:var(--text)">'+( p.name||'')+'</span>'+roleSpan+phoneSpan+'</div>';
+  }).join('');
+  return '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'
+    +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">관련 담당자</div>'
+    +'<div style="display:flex;flex-wrap:wrap">'+chips+'</div></div>';
+}
+
+// ── 리스트 뷰 렌더 (테이블)
+function renderListView(filtered){
+  var tableEl = document.getElementById('companyTable');
+  if(!tableEl) return;
+  if(!filtered.length){
+    tableEl.innerHTML='<div class="empty-state"><div class="ei">🏢</div><p>표시할 회사가 없습니다.</p></div>';
+    return;
+  }
+  var stageCls = {잠재고객:'s-잠재고객',가망고객:'s-가망고객',상담고객:'s-상담고객',
+    제안고객:'s-제안고객',계약고객:'s-계약고객',냉담고객:'s-냉담고객',관리고객:'s-관리고객'};
+
+  var rows = filtered.map(function(co, idx){
+    var stage = co.status||'';
+    var isActive = !!(co.lastContact || co.nextAction);
+    return '<tr onclick="showPage(\'detail\',\''+co.id+'\')" style="cursor:pointer">'
+      +'<td style="color:var(--text3);font-size:10px;text-align:center;padding:9px 6px;white-space:nowrap">'+(idx+1)+'</td>'
+      +'<td class="name" style="min-width:120px;font-weight:600">'+hlStr(searchQ.toLowerCase(),co.name||'')+'</td>'
+      +'<td style="min-width:80px">'+(co.contactName||'─')+'</td>'
+      +'<td class="muted" style="min-width:110px;font-size:11px">'+(co.contactInfo||'─')+'</td>'
+      +'<td class="muted" style="min-width:140px;font-size:11px">'+(co.address||'─')+'</td>'
+      +'<td style="white-space:nowrap"><span class="badge '+(stageCls[stage]||'')+'">'+stage+'</span></td>'
+      +'<td class="muted" style="font-size:11px;white-space:nowrap">'+(co.cardDate||'─')+'</td>'
+      +'<td class="muted" style="font-size:11px;white-space:nowrap">'+(co.lastContact||'─')+'</td>'
+      +'<td onclick="event.stopPropagation()" style="text-align:center;padding:6px 4px">'
+      +'<button onclick="event.stopPropagation();toggleActive(this)" data-id="'+co.id+'" '
+      +'style="border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;'
+      +(isActive
+        ? 'background:var(--green-d);color:var(--green)">활성'
+        : 'background:var(--surface3);color:var(--text3)">비활성')
+      +'</button>'
+      +'</td>'
+      +'</tr>';
+  }).join('');
+
+  tableEl.innerHTML =
+    '<div style="overflow-x:auto">'
+    +'<table class="co-table" style="min-width:700px">'
+    +'<thead><tr>'
+    +'<th style="width:28px">#</th>'
+    +'<th>회사명</th>'
+    +'<th>담당자</th>'
+    +'<th>연락처</th>'
+    +'<th>주소</th>'
+    +'<th>고객단계</th>'
+    +'<th>명함등록일</th>'
+    +'<th>최근접촉일</th>'
+    +'<th style="width:60px;text-align:center">활성</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table>'
+    +'</div>';
+}
+
+function renderDetail(companyId){
+  const c=DB.companies.find(x=>x.id===companyId);
+  if(!c)return;
+  const contacts=DB.contacts.filter(x=>x.companyId===companyId)
+    .sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+  const methodIcon={전화:'📞',이메일:'✉️',미팅:'🤝',화상:'💻',문자:'💬',방문:'🚗'};
+  const people=c.people||[];
+
+  document.getElementById('detailContent').innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">
+        <h2 style="font-size:20px;font-weight:700">${c.name}</h2>
+        <span class="badge s-${c.status}">${c.status}</span>
+      </div>
+      ${c.industry?`<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--surface3);color:var(--text2);border:1px solid var(--border)">${c.industry}</span>`:''}
+      ${c.subCategory?`<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--surface2);color:var(--text3);border:1px solid var(--border);margin-left:4px">${c.subCategory}</span>`:''}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openCompanyModal('${c.id}')">✏️ 수정</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCompany('${c.id}')">🗑 삭제</button>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div>
+      <!-- 회사 정보 -->
+      <div class="card mb4">
+        <div class="sec-title">회사 정보</div>
+        <div class="info-grid">
+          <div class="info-item"><label>대표</label><div class="val">${c.contactName||'─'}</div></div>
+          <div class="info-item"><label>연락처</label><div class="val">${c.contactInfo||'─'}</div></div>
+          <div class="info-item"><label>이메일</label><div class="val">${c.email?`<a href="mailto:${c.email}" style="color:var(--ac2)">${c.email}</a>`:'─'}</div></div>
+          <div class="info-item"><label>주소</label><div class="val" style="font-size:12px">${c.address||'─'}</div></div>
+          <div class="info-item"><label>명함등록일</label><div class="val mono" style="font-size:11px">${c.cardDate||'─'}</div></div>
+          <div class="info-item"><label>처음 접촉</label><div class="val mono" style="font-size:11px">${c.lastContact||'─'}</div></div>
+        </div>
+
+        ${c.memo?`
+        <div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">메모</div>
+          <div style="font-size:12px;color:var(--text2);white-space:pre-wrap">${c.memo}</div>
+        </div>`:''}
+      </div>
+
+      <!-- 관련 인물 -->
+      ${people.length>0?`
+      <div class="card mb4">
+        <div class="sec-title">관련 인물 (${people.length}명)</div>
+        <div class="people-list">
+          ${people.map(p=>`
+          <div class="person-row">
+            <div class="person-avatar">${p.name.slice(0,1)}</div>
+            <div class="person-info">
+              <div class="person-name">${p.name} <span style="color:var(--text3);font-size:11px">${p.role||''}</span></div>
+              <div class="person-contact">${p.contact||''}</div>
+            </div>
+            <span class="person-type-chip">${p.type||''}</span>
+          </div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- 접촉일지 -->
+      <div class="card">
+        <div class="sec-title">접촉일지 (${contacts.length}건)</div>
+        ${contacts.length===0?`
+        <div style="text-align:center;padding:35px;color:var(--text3);font-size:12px">
+          접촉 기록이 없습니다. 첫 기록을 추가해 보세요.
+        </div>`:`
+        <div class="timeline">
+          ${contacts.map(ct=>`
+          <div class="tl-item">
+            <div class="tl-dot">${methodIcon[ct.method]||'📌'}</div>
+            <div class="tl-body">
+              <div class="tl-head">
+                <span class="tl-date">${fmtDateFull(ct.datetime)}</span>
+                <span class="tl-method">${ct.method}</span>
+                ${(ct.persons&&ct.persons.length?ct.persons:(ct.personName||ct.person)?[{name:ct.personName||ct.person,phone:ct.personPhone||''}]:[]).map(p=>`
+                  <span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface3);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:10px;margin-right:3px">
+                    <span style="color:var(--text2);font-weight:500">${p.name||''}</span>
+                    ${p.phone?`<span style="color:var(--text3);font-family:'JetBrains Mono',monospace">${p.phone}</span>`:''}
+                  </span>`).join('')}
+                <button class="btn btn-danger btn-xs" style="margin-left:auto" onclick="deleteContact('${ct.id}')">✕</button>
+              </div>
+              <div class="tl-box">
+                <div class="tl-summary">${ct.summary}</div>
+                ${ct.decision?`<div class="tl-decision">💡 ${ct.decision}</div>`:''}
+                ${ct.nextStep?`<div class="tl-next" style="display:block;margin-top:5px">▶ ${ct.nextStep}</div>`:''}
+                ${renderCtPersonsHTML(ct, people)}
+                ${ct.attachments&&ct.attachments.length?`
+                <div class="tl-attachments">
+                  ${ct.attachments.map(a=>a.type==='link'
+                    ?`<a href="${a.url}" target="_blank" class="att-chip">🔗 ${a.name}</a>`
+                    :`<a href="${a.url}" download="${a.name}" class="att-chip">📎 ${a.name}</a>`
+                  ).join('')}
+                </div>`:''}
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>`}
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div>
+      <div class="card" style="position:sticky;top:0">
+        <div class="sec-title">빠른 수정</div>
+        <div class="field" style="margin-bottom:10px">
+          <label>고객 단계</label>
+          <select id="q-status" onchange="quickSave('${c.id}','status',this.value)">
+            ${['잠재고객','가망고객','상담고객','제안고객','계약고객','냉담고객','관리고객'].map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field" style="margin-bottom:12px">
+          <label>메모</label>
+          <textarea id="q-memo" style="min-height:110px" onblur="quickSave('${c.id}','memo',this.value)">${c.memo||''}</textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openContactModal()">+ 접촉일지 추가</button>
+        ${c.email?`
+        <div class="divider"></div>
+        <div class="sec-title">이메일</div>
+        <div style="font-size:12px;color:var(--ac2);margin-bottom:8px">
+          <a href="mailto:${c.email}" style="color:var(--ac2)">${c.email}</a>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="newDraftForCompany('${c.id}')">✉️ 이메일 초안 작성</button>
+        <div id="companyEmailDrafts_${c.id}" style="margin-top:8px"></div>
+        `:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function quickSave(id,field,value){
+  const companies=DB.companies;
+  const c=companies.find(x=>x.id===id);
+  if(!c)return;
+  c[field]=value;
+  DB.companies=companies;
+  showToast('저장되었습니다');
+}
+
+// ────────────────────────────────────────
+// COMPANY CRUD
+// ────────────────────────────────────────
+let editCompanyId=null, editPeople=[];
+
+function openCompanyModal(id){
+  editCompanyId=id||null;
+  editPeople=[];
+  document.getElementById('coModalTitle').textContent=id?'회사 정보 수정':'회사 추가';
+
+  if(id){
+    const c=DB.companies.find(x=>x.id===id);
+    if(!c)return;
+    document.getElementById('c-name').value=c.name||'';
+    document.getElementById('c-industry').value=c.industry||'';
+    document.getElementById('c-contact-name').value=c.contactName||'';
+    document.getElementById('c-contact-info').value=c.contactInfo||'';
+    document.getElementById('c-email').value=c.email||'';
+    // 주소 3칸 분리 세팅
+    (function(){
+      const addr = c.address||'';
+      const tok = addr.trim().split(/\s+/);
+      const sido = tok[0]||''; const sigu = tok[1]||'';
+      const detail = tok.slice(2).join(' ');
+      document.getElementById('c-sido').value = sido;
+      document.getElementById('c-sigu').value = sigu;
+      document.getElementById('c-address-detail').value = detail;
+      document.getElementById('c-address').value = addr;
+      updateSiguOptions();
+    })();
+    document.getElementById('c-card-date').value=c.cardDate||'';
+    document.getElementById('c-status').value=c.status||'잠재고객';
+    document.getElementById('c-memo').value=c.memo||'';
+    editPeople=[...(c.people||[]).map(p=>({...p}))];
+  }else{
+    ['c-name','c-contact-name','c-contact-info','c-email','c-address','c-address-detail','c-sigu','c-memo'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    document.getElementById('c-sido').value='';
+    document.getElementById('c-card-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('c-status').value='잠재고객';
+  }
+  renderPeopleEdit();
+  openModal('companyModal');
+}
+
+function renderPeopleEdit(){
+  document.getElementById('peopleEdit').innerHTML=editPeople.map((p,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:7px;margin-bottom:7px;align-items:center">
+      <input type="text" value="${p.name||''}" placeholder="이름" onchange="editPeople[${i}].name=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:5px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+      <input type="text" value="${p.role||''}" placeholder="직책" onchange="editPeople[${i}].role=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:5px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+      <select onchange="editPeople[${i}].type=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:5px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+        <option value="고객사 담당자" ${p.type==='고객사 담당자'?'selected':''}>고객사 담당자</option>
+        <option value="고객사 세무사" ${p.type==='고객사 세무사'?'selected':''}>고객사 세무사</option>
+        <option value="자사 전문가" ${p.type==='자사 전문가'?'selected':''}>자사 전문가</option>
+        <option value="기타" ${p.type==='기타'?'selected':''}>기타</option>
+      </select>
+      <input type="text" value="${p.contact||''}" placeholder="연락처/이메일" onchange="editPeople[${i}].contact=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:5px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+      <button class="btn btn-danger btn-xs" onclick="editPeople.splice(${i},1);renderPeopleEdit()">✕</button>
+    </div>`).join('');
+}
+
+function addPersonRow(){
+  editPeople.push({id:uid(),name:'',role:'',type:'고객사 담당자',contact:''});
+  renderPeopleEdit();
+}
+
+function saveCompany(){
+  const name=document.getElementById('c-name').value.trim();
+  if(!name){showToast('회사명을 입력하세요',true);return}
+  const data={
+    name,
+    industry:document.getElementById('c-industry').value.trim(),
+    contactName:document.getElementById('c-contact-name').value.trim(),
+    contactInfo:document.getElementById('c-contact-info').value.trim(),
+    email:document.getElementById('c-email').value.trim(),
+    address:(()=>{
+      const sd=document.getElementById('c-sido').value.trim();
+      const sg=document.getElementById('c-sigu').value.trim();
+      const dt=document.getElementById('c-address-detail').value.trim();
+      return [sd,sg,dt].filter(Boolean).join(' ');
+    })(),
+    cardDate:document.getElementById('c-card-date').value,
+    status:document.getElementById('c-status').value,
+    lastContact:(function(){var el=document.getElementById('c-last-contact');return el?el.value:'';})(),
+    memo:document.getElementById('c-memo').value.trim(),
+    people:editPeople.filter(p=>p.name),
+  };
+  const companies=DB.companies;
+  if(editCompanyId){
+    const idx=companies.findIndex(x=>x.id===editCompanyId);
+    companies[idx]={...companies[idx],...data};
+    DB.companies=companies;
+    showToast('수정되었습니다');
+    closeModal('companyModal');
+    if(curPage==='detail')renderDetail(editCompanyId);
+  }else{
+    companies.push({id:uid(),createdAt:new Date().toISOString().slice(0,10),...data});
+    DB.companies=companies;
+    showToast('회사가 추가되었습니다');
+    closeModal('companyModal');
+    renderCompanies();
+  }
+  updateBadges();
+}
+
+function listDelClick(btn){
+  var id = btn.getAttribute('data-id');
+  if(!id) return;
+  openDelConfirm(id, function(){
+    DB.companies = DB.companies.filter(function(x){ return x.id !== id; });
+    DB.contacts  = DB.contacts.filter(function(x){ return x.companyId !== id; });
+    showToast('삭제되었습니다');
+    renderCompanies();
+    updateBadges();
+  });
+}
+
+function deleteCompanyFromList(id){
+  openDelConfirm(id, function(){
+    DB.companies = DB.companies.filter(function(x){ return x.id!==id; });
+    DB.contacts  = DB.contacts.filter(function(x){ return x.companyId!==id; });
+    showToast('삭제되었습니다');
+    renderCompanies();
+    updateBadges();
+  });
+}
+
+function deleteCompany(id){
+  openDelConfirm(id, function(){
+    DB.companies=DB.companies.filter(function(x){return x.id!==id;});
+    DB.contacts=DB.contacts.filter(function(x){return x.companyId!==id;});
+    showToast('삭제되었습니다');
+    showPage('companies');
+    renderCompanies();
+    updateBadges();
+  });
+}
+
+// ────────────────────────────────────────
+// CONTACTS
+// ────────────────────────────────────────
+let pendingAttach=[];
+let pendingPersons=[{name:'',phone:''}];
+let editContactId=null; // 수정 중인 접촉일지 ID (null=신규)
+
+// ── 약속 모달 열기
+function openApptModal(dateStr){
+  var sel = document.getElementById('appt-company');
+  if(sel){
+    sel.innerHTML = '<option value="">-- 회사 선택 --</option>'
+      + DB.companies.map(function(co){ return '<option value="'+co.id+'">'+co.name+'</option>'; }).join('');
+  }
+  var dateEl = document.getElementById('appt-date');
+  if(dateEl){
+    if(dateStr){
+      dateEl.value = dateStr;
+    } else if(!dateEl.value){
+      var t = new Date();
+      dateEl.value = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    }
+  }
+  var titleEl = document.getElementById('appt-title');
+  if(titleEl) titleEl.value = '';
+  var memoEl = document.getElementById('appt-memo');
+  if(memoEl) memoEl.value = '';
+  openModal('apptModal');
+}
+
+// ── 약속 저장
+function saveAppt(){
+  var date  = document.getElementById('appt-date').value;
+  var title = document.getElementById('appt-title').value.trim();
+  if(!date||!title){ showToast('날짜와 내용을 입력하세요',true); return; }
+  var appts = DB.appointments;
+  appts.push({
+    id: uid(),
+    date: date,
+    time: document.getElementById('appt-time').value||'',
+    companyId: document.getElementById('appt-company').value||'',
+    title: title,
+    memo: document.getElementById('appt-memo').value.trim(),
+    createdAt: new Date().toISOString()
+  });
+  DB.appointments = appts;
+  closeModal('apptModal');
+  showToast('약속이 등록되었습니다');
+  renderCalendar();
+}
+
+// ── 약속 삭제
+function deleteAppt(id){
+  DB.appointments = DB.appointments.filter(function(a){ return a.id!==id; });
+  showToast('삭제되었습니다');
+  renderCalendar();
+}
+
+// ── 약속에서 접촉일지 바로 작성
+function openContactFromAppt(companyId, date, time, title){
+  if(!companyId) return;
+  // 상세 페이지로 이동 후 접촉일지 모달 열기
+  curDetailId = companyId;
+  showPage('detail', companyId);
+  // DOM 렌더 후 모달 열기
+  setTimeout(function(){
+    pendingAttach=[];
+    var ctAttach=document.getElementById('ctAttachList');
+    if(ctAttach) ctAttach.innerHTML='';
+    ['ct-summary','ct-decision','ct-next','ct-link-url','ct-link-name'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    pendingPersons=[{name:'',phone:''}];
+    renderCtPersonList();
+    // 약속 날짜+시간 자동 입력
+    var dt=document.getElementById('ct-datetime');
+    if(dt) dt.value=date+'T'+(time||'10:00');
+    var method=document.getElementById('ct-method');
+    if(method) method.value='미팅';
+    // 약속 제목을 summary에 미리 채우기
+    var summary=document.getElementById('ct-summary');
+    if(summary) summary.value=title||'';
+    openModal('contactModal');
+  }, 400);
+}
+
+// ── 접촉일지 수정 모달 열기
+function openContactEditModal(ctId){
+  var ct = DB.contacts.find(function(x){ return x.id===ctId; });
+  if(!ct) return;
+  editContactId = ctId;
+  curDetailId = ct.companyId;
+  var titleEl=document.getElementById('contactModalTitle');
+  if(titleEl) titleEl.textContent='접촉일지 수정';
+  pendingAttach = (ct.attachments||[]).slice();
+  pendingPersons = (ct.persons&&ct.persons.length) ? ct.persons.map(function(p){return {name:p.name||'',phone:p.phone||''};}) : [{name:'',phone:''}];
+  renderCtPersonList();
+  renderAttachList();
+  document.getElementById('ct-datetime').value = ct.datetime||'';
+  document.getElementById('ct-method').value = ct.method||'미팅';
+  document.getElementById('ct-summary').value = ct.summary||'';
+  document.getElementById('ct-decision').value = ct.decision||'';
+  document.getElementById('ct-next').value = ct.nextStep||'';
+  openModal('contactModal');
+}
+
+function openContactModal(){
+  if(!curDetailId)return;
+  editContactId=null;
+  var titleEl=document.getElementById('contactModalTitle');
+  if(titleEl) titleEl.textContent='접촉일지 추가';
+  pendingAttach=[];
+  document.getElementById('ctAttachList').innerHTML='';
+  document.getElementById('ct-link-url').value='';
+  document.getElementById('ct-link-name').value='';
+  ['ct-summary','ct-decision','ct-next'].forEach(id=>document.getElementById(id).value='');
+  pendingPersons=[{name:'',phone:''}];
+  renderCtPersonList();
+  const now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('ct-datetime').value=now.toISOString().slice(0,16);
+  document.getElementById('ct-method').value='미팅';
+  openModal('contactModal');
+}
+
+function openContactModalGlobal(){
+  const companies=DB.companies;
+  if(!companies.length){showToast('먼저 회사를 추가하세요',true);return}
+  const sel=document.getElementById('coSelectList');
+  if(sel){
+    sel.innerHTML='<option value="">-- 선택 --</option>'
+      +companies.map(co=>'<option value="'+co.id+'">'+co.name+'</option>').join('');
+  }
+  openModal('coSelectModal');
+}
+
+function confirmCoSelect(){
+  const sel=document.getElementById('coSelectList');
+  if(!sel||!sel.value){showToast('회사를 선택하세요',true);return}
+  curDetailId=sel.value;
+  closeModal('coSelectModal');
+  openContactModal();
+}
+
+function addContactLink(){
+  const url=document.getElementById('ct-link-url').value.trim();
+  const name=document.getElementById('ct-link-name').value.trim()||url;
+  if(!url)return;
+  pendingAttach.push({type:'link',name,url});
+  renderAttachList();
+  document.getElementById('ct-link-url').value='';
+  document.getElementById('ct-link-name').value='';
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('ctDrop').classList.remove('drag-over');
+  Array.from(e.dataTransfer.files).forEach(readFile);
+}
+function handleFileInput(e){Array.from(e.target.files).forEach(readFile)}
+function readFile(f){
+  if(f.size>2*1024*1024){showToast('2MB 이하만 가능',true);return}
+  const r=new FileReader();
+  r.onload=e=>{pendingAttach.push({type:'file',name:f.name,url:e.target.result});renderAttachList()}
+  r.readAsDataURL(f);
+}
+function renderCtPersonList(){
+  const el=document.getElementById('ctPersonList');
+  if(!el)return;
+  el.innerHTML=pendingPersons.map((p,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:7px;margin-bottom:6px;align-items:center">
+      <input type="text" value="${p.name||''}" placeholder="이름·직책 (예: 홍길동 이사)"
+        oninput="pendingPersons[${i}].name=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:6px 10px;color:var(--text);font-family:inherit;font-size:12px;outline:none;width:100%"
+        onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+      <input type="text" value="${p.phone||''}" placeholder="전화번호 (예: 010-1234-5678)"
+        oninput="pendingPersons[${i}].phone=this.value"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:6px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;width:100%;font-family:'JetBrains Mono',monospace"
+        onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--border)'">
+      <button onclick="pendingPersons.splice(${i},1);if(!pendingPersons.length)pendingPersons=[{name:'',phone:''}];renderCtPersonList()"
+        style="background:var(--red-d);border:none;border-radius:var(--rs);padding:5px 8px;color:var(--red);cursor:pointer;font-size:11px;white-space:nowrap"
+        ${pendingPersons.length===1?'disabled style="background:var(--surface3);border:none;border-radius:var(--rs);padding:5px 8px;color:var(--text3);cursor:not-allowed;font-size:11px"':''}>✕</button>
+    </div>`).join('');
+}
+function addCtPersonRow(){
+  pendingPersons.push({name:'',phone:''});
+  renderCtPersonList();
+  // 마지막 이름 input에 포커스
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('#ctPersonList input[placeholder*="이름"]');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+function renderAttachList(){
+  document.getElementById('ctAttachList').innerHTML=pendingAttach.map((a,i)=>
+    `<span class="att-chip">${a.type==='link'?'🔗':'📎'} ${a.name}
+     <span onclick="pendingAttach.splice(${i},1);renderAttachList()" style="cursor:pointer;margin-left:4px;color:var(--red)">✕</span></span>`
+  ).join('');
+}
+function saveContact(){
+  const companyId=curDetailId;
+  const summary=document.getElementById('ct-summary').value.trim();
+  if(!summary){showToast('내용 요약을 입력하세요',true);return}
+  const newData={
+    datetime:document.getElementById('ct-datetime').value,
+    method:document.getElementById('ct-method').value,
+    persons: pendingPersons.filter(p=>p.name||p.phone),
+    personName: pendingPersons.filter(p=>p.name).map(p=>p.name).join(', '),
+    personPhone: pendingPersons.filter(p=>p.phone).map(p=>p.phone).join(', '),
+    person: pendingPersons.filter(p=>p.name||p.phone).map(p=>p.name+(p.phone?' ('+p.phone+')':'')).join(' / '),
+    summary,
+    decision:document.getElementById('ct-decision').value.trim(),
+    nextStep:document.getElementById('ct-next').value.trim(),
+    attachments:[...pendingAttach],
+  };
+  const contacts=DB.contacts;
+  if(editContactId){
+    // 수정 모드
+    const idx=contacts.findIndex(x=>x.id===editContactId);
+    if(idx!==-1) contacts[idx]={...contacts[idx],...newData};
+    DB.contacts=contacts;
+    showToast('접촉일지가 수정되었습니다');
+  } else {
+    // 신규
+    const ct={id:uid(),companyId,...newData};
+    contacts.push(ct);
+    DB.contacts=contacts;
+    const companies=DB.companies;
+    const co=companies.find(x=>x.id===companyId);
+    if(co){
+      const d=newData.datetime.slice(0,10);
+      if(!co.lastContact||d>co.lastContact) co.lastContact=d;
+      if(newData.nextStep) co.nextAction=newData.nextStep;
+      DB.companies=companies;
+    }
+    showToast('접촉일지가 저장되었습니다');
+  }
+  editContactId=null;
+  closeModal('contactModal');
+  if(curPage==='recent') renderRecent();
+  else renderDetail(companyId);
+  updateBadges();
+}
+function deleteContact(id){
+  if(!confirm('이 접촉일지를 삭제할까요?'))return;
+  DB.contacts=DB.contacts.filter(x=>x.id!==id);
+  showToast('삭제되었습니다');
+  renderDetail(curDetailId);
+  updateBadges();
+}
+
+// ────────────────────────────────────────
+// CALENDAR
+// ────────────────────────────────────────
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+function renderCalendar(){
+  const y=calYear,m=calMonth;
+  const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('calMonth').textContent=`${y}년 ${monthNames[m]}`;
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const today=new Date();
+  const contacts=DB.contacts;
+  const todos=DB.todos;
+
+  // Build event map
+  const evMap={};
+  const curY=y;
+  contacts.forEach(c=>{
+    const d=c.datetime.slice(0,10);
+    if(new Date(d).getMonth()===m&&new Date(d).getFullYear()===y){
+      if(!evMap[d])evMap[d]=[];
+      const co=DB.companies.find(x=>x.id===c.companyId);
+      evMap[d].push({type:'contact',label:`${co?.name||'?'} ${c.method}`,companyId:c.companyId});
+    }
+    // nextStep 날짜 파싱 → 다음스텝 이벤트
+    if(c.nextStep){
+      const nd=parseNextStepDate(c.nextStep, curY);
+      if(nd && new Date(nd).getMonth()===m && new Date(nd).getFullYear()===y){
+        if(!evMap[nd])evMap[nd]=[];
+        const co=DB.companies.find(x=>x.id===c.companyId);
+        evMap[nd].push({type:'nextstep',label:`▶ ${co?.name||'?'}: ${c.nextStep.slice(0,15)}`,companyId:c.companyId});
+      }
+    }
+  });
+
+  let cells='';
+  for(let i=0;i<firstDay;i++){
+    const prevD=new Date(y,m,0).getDate()-firstDay+i+1;
+    cells+=`<div class="cal-cell other-month"><div class="cal-num">${prevD}</div></div>`;
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const evs=evMap[dateStr]||[];
+    cells+=`<div class="cal-cell ${isToday?'today':''}" onclick="calCellClick('${dateStr}')">
+      <div class="cal-num">${d}</div>
+      ${evs.slice(0,2).map(e=>`<div class="cal-event ${e.type}" onclick="event.stopPropagation();showPage('detail','${e.companyId}')">${e.label}</div>`).join('')}
+      ${evs.length>2?`<div class="cal-event" style="background:var(--surface3);color:var(--text3)">+${evs.length-2}개</div>`:''}
+    </div>`;
+  }
+  const remaining=(7-((firstDay+daysInMonth)%7))%7;
+  for(let i=1;i<=remaining;i++) cells+=`<div class="cal-cell other-month"><div class="cal-num">${i}</div></div>`;
+  document.getElementById('calBody').innerHTML=cells;
+
+  // Sidebar event list
+  const allEvents=[];
+  // 접촉 기록
+  contacts.filter(ct=>{
+    const d=new Date(ct.datetime);
+    return d.getMonth()===m&&d.getFullYear()===y;
+  }).forEach(ct=>{
+    const co=DB.companies.find(x=>x.id===ct.companyId);
+    allEvents.push({
+      date:ct.datetime, type:'contact',
+      title:'['+ct.method+'] '+ct.summary.slice(0,25),
+      company:co?co.name:'', companyId:ct.companyId
+    });
+  });
+  // 다음스텝 날짜
+  contacts.forEach(ct=>{
+    if(!ct.nextStep) return;
+    const nd=parseNextStepDate(ct.nextStep, y);
+    if(!nd) return;
+    const dd=new Date(nd);
+    if(dd.getMonth()!==m||dd.getFullYear()!==y) return;
+    const co=DB.companies.find(x=>x.id===ct.companyId);
+    allEvents.push({
+      date:nd+'T00:00', type:'nextstep',
+      title:'▶ '+ct.nextStep,
+      company:co?co.name:'', companyId:ct.companyId
+    });
+  });
+  // 약속
+  DB.appointments.filter(ap=>{
+    const d=new Date(ap.date);
+    return d.getMonth()===m&&d.getFullYear()===y;
+  }).forEach(ap=>{
+    const co=DB.companies.find(x=>x.id===ap.companyId);
+    allEvents.push({
+      date:ap.date+'T'+(ap.time||'00:00'), type:'appt',
+      title:'📅 '+(ap.time?ap.time+' ':'')+ap.title,
+      company:co?co.name:'', companyId:ap.companyId,
+      apptId:ap.id, apptDate:ap.date, apptTime:ap.time||'', apptTitle:ap.title
+    });
+  });
+  allEvents.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const typeColor={contact:'var(--green)',appt:'var(--blue)',nextstep:'var(--orange)'};
+  const typeLabel={contact:'접촉',appt:'약속',nextstep:'다음스텝'};
+  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  window._calAppts=[];
+  window._calCompIds=[];
+
+  if(!allEvents.length){
+    document.getElementById('calEventList').innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">이달 일정 없음</div>';
+    return;
+  }
+
+  document.getElementById('calEventList').innerHTML=allEvents.map(function(e){
+    var borderCol=typeColor[e.type]||'var(--border)';
+    var dateOnly=e.date.slice(0,10);
+    var isToday=dateOnly===todayStr;
+    var isPast=dateOnly<todayStr;
+
+    // D-day 계산
+    var dday='';
+    if(e.type!=='contact'){
+      var diff=Math.round((new Date(dateOnly)-new Date(todayStr))/(864e5));
+      if(diff===0) dday='<span style="font-size:10px;font-weight:700;color:var(--red);margin-left:4px">D-day</span>';
+      else if(diff>0) dday='<span style="font-size:10px;color:var(--ac2);margin-left:4px">D-'+diff+'</span>';
+      else dday='<span style="font-size:10px;color:var(--text3);margin-left:4px">D+'+Math.abs(diff)+'</span>';
+    }
+
+    // 약속 삭제 버튼
+    var delBtn='';
+    if(e.type==='appt'&&e.apptId){
+      var di=window._calAppts.length;
+      window._calAppts.push({id:e.apptId,companyId:e.companyId,date:e.apptDate,time:e.apptTime,title:e.apptTitle});
+      delBtn='<button onclick="event.stopPropagation();deleteAppt(window._calAppts['+di+'].id)" '
+        +'style="font-size:10px;padding:2px 7px;background:var(--red-d);color:var(--red);'
+        +'border:none;border-radius:4px;cursor:pointer;margin-left:auto">삭제</button>';
+    }
+
+    // 접촉일지 작성 버튼 (약속)
+    var writeBtn='';
+    if(e.type==='appt'&&e.companyId){
+      var ai=window._calAppts.length-1;
+      writeBtn='<button onclick="event.stopPropagation();var a=window._calAppts['+ai+'];openContactFromAppt(a.companyId,a.date,a.time,a.title)" '
+        +'style="margin-top:5px;padding:3px 10px;font-size:11px;background:var(--ac-dim);'
+        +'color:var(--ac2);border:1px solid var(--ac);border-radius:var(--rs);cursor:pointer;'
+        +'font-family:inherit;width:100%">📝 접촉일지 작성</button>';
+    }
+
+    var ci2=window._calCompIds.length;
+    window._calCompIds.push(e.companyId||'');
+
+    return '<div class="cal-ev-item" onclick="if(window._calCompIds['+ci2+'])showPage(\'detail\',window._calCompIds['+ci2+'])" '
+      +'style="cursor:'+(e.companyId?'pointer':'default')+';border-left:3px solid '+borderCol+';'
+      +(isToday?'background:var(--ac-dim);':isPast&&e.type!=='contact'?'opacity:0.6;':'')
+      +'">'
+      +'<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px">'
+      +'<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:'+borderCol+';color:#fff;font-weight:600">'+typeLabel[e.type]+'</span>'
+      +'<span style="font-size:10px;color:var(--text3)">'+fmtDate(e.date)+'</span>'
+      +dday
+      +(delBtn?'<span style="margin-left:auto">'+delBtn+'</span>':'')
+      +'</div>'
+      +'<div style="font-size:12px;font-weight:500;color:var(--text)">'+e.title+'</div>'
+      +(e.company?'<div style="font-size:11px;color:var(--ac2);margin-top:1px">'+e.company+'</div>':'')
+      +writeBtn
+      +'</div>';
+  }).join('');
+}
+function calMove(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++}
+  if(calMonth<0){calMonth=11;calYear--}
+  renderCalendar();
+}
+function calToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar()}
+function calCellClick(dateStr){ openApptModal(dateStr); }
+
+// ────────────────────────────────────────
+// EMAIL DRAFTS
+// ────────────────────────────────────────
+let curDraftId=null;
+function renderEmailList(){
+  const drafts=DB.emails;
+  const el=document.getElementById('emailList');
+  // Populate company select
+  const sel=document.getElementById('email-company');
+  sel.innerHTML='<option value="">-- 회사 선택 --</option>'+
+    DB.companies.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+  if(!drafts.length){
+    el.innerHTML=`<div style="text-align:center;padding:30px;color:var(--text3);font-size:12px">저장된 초안 없음</div>`;
+    return;
+  }
+  el.innerHTML=drafts.map(d=>`
+    <div class="email-item ${curDraftId===d.id?'active':''}" onclick="openDraft('${d.id}')">
+      <div class="email-item-company">${DB.companies.find(c=>c.id===d.companyId)?.name||d.to||'제목 없음'}</div>
+      <div class="email-item-subject">${d.subject||'(제목 없음)'}</div>
+      <div class="email-item-date">${fmtDate(d.updatedAt)}</div>
+    </div>`).join('');
+}
+function newDraft(){
+  curDraftId=null;
+  document.getElementById('emailEmpty').style.display='none';
+  document.getElementById('emailEditor').style.display='block';
+  document.getElementById('email-to').value='';
+  document.getElementById('email-company').value='';
+  document.getElementById('email-subject').value='';
+  document.getElementById('email-body').value='';
+  // Repopulate company dropdown
+  const sel=document.getElementById('email-company');
+  sel.innerHTML='<option value="">-- 회사 선택 --</option>'+
+    DB.companies.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+function newDraftForCompany(companyId){
+  showPage('email');
+  setTimeout(()=>{
+    newDraft();
+    const c=DB.companies.find(x=>x.id===companyId);
+    if(c){
+      document.getElementById('email-to').value=c.email||'';
+      document.getElementById('email-company').value=companyId;
+    }
+  },50);
+}
+function openDraft(id){
+  const d=DB.emails.find(x=>x.id===id);
+  if(!d)return;
+  curDraftId=id;
+  document.getElementById('emailEmpty').style.display='none';
+  document.getElementById('emailEditor').style.display='block';
+  document.getElementById('email-to').value=d.to||'';
+  document.getElementById('email-company').value=d.companyId||'';
+  document.getElementById('email-subject').value=d.subject||'';
+  document.getElementById('email-body').value=d.body||'';
+  renderEmailList();
+}
+function saveDraft(){
+  const to=document.getElementById('email-to').value.trim();
+  const companyId=document.getElementById('email-company').value;
+  const subject=document.getElementById('email-subject').value.trim();
+  const body=document.getElementById('email-body').value;
+  const emails=DB.emails;
+  if(curDraftId){
+    const idx=emails.findIndex(x=>x.id===curDraftId);
+    emails[idx]={...emails[idx],to,companyId,subject,body,updatedAt:new Date().toISOString()};
+  }else{
+    const d={id:uid(),to,companyId,subject,body,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    emails.push(d);
+    curDraftId=d.id;
+  }
+  DB.emails=emails;
+  showToast('초안이 저장되었습니다');
+  renderEmailList();
+}
+function copyEmail(){
+  const body=document.getElementById('email-body').value;
+  navigator.clipboard.writeText(body).then(()=>showToast('본문이 복사되었습니다'));
+}
+function openMailto(){
+  const to=document.getElementById('email-to').value;
+  const subject=encodeURIComponent(document.getElementById('email-subject').value);
+  const body=encodeURIComponent(document.getElementById('email-body').value);
+  window.open(`mailto:${to}?subject=${subject}&body=${body}`);
+}
+function deleteDraft(){
+  if(!curDraftId)return;
+  if(!confirm('이 초안을 삭제할까요?'))return;
+  DB.emails=DB.emails.filter(x=>x.id!==curDraftId);
+  curDraftId=null;
+  document.getElementById('emailEmpty').style.display='block';
+  document.getElementById('emailEditor').style.display='none';
+  renderEmailList();
+  showToast('삭제되었습니다');
+}
+
+// ────────────────────────────────────────
+// EXCEL IMPORT
+// ────────────────────────────────────────
+let excelData=[], excelHeaders=[];
+const CRM_FIELDS=[
+  {key:'name',       label:'회사명'},
+  {key:'industry',   label:'경로'},
+  {key:'contactName',label:'담당자명'},
+  {key:'contactInfo',label:'연락처(휴대폰)'},
+  {key:'contactInfo2',label:'연락처(근무처)'},
+  {key:'email',      label:'이메일'},
+  {key:'status',     label:'고객 단계'},
+  {key:'memo',       label:'메모'},
+  {key:'address',    label:'주소(메모 포함)'},
+  {key:'subCategory',label:'중분류(메모 포함)'},
+  {key:'cardDate',   label:'명함등록일'},
+  {key:'_skip',      label:'(무시)'},
+];
+
+// 알려진 컬럼명 정밀 매핑표
+const KNOWN_COL_MAP = {
+  '회사':           'name',
+  '이름':           'contactName',
+  '휴대폰':         'contactInfo',
+  '근무처 전화':    'contactInfo2',
+  '전자 메일 주소': 'email',
+  '대분류':         'industry',
+  '중분류':         'subCategory',
+  '근무지 주소 번지':'address',
+  '명함등록일':       'cardDate',
+  '등록일':           'cardDate',
+};
+
+function openExcelImport(){
+  document.getElementById('excelStep1').style.display='block';
+  document.getElementById('excelStep2').style.display='none';
+  document.getElementById('excelImportBtn').style.display='none';
+  openModal('excelModal');
+}
+function handleExcelDrop(e){
+  e.preventDefault();
+  document.getElementById('excelDrop').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f)processExcelFile(f);
+}
+function handleExcelFile(e){
+  const f=e.target.files[0];
+  if(f)processExcelFile(f);
+  e.target.value='';
+}
+function processExcelFile(f){
+  const r=new FileReader();
+  r.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:'binary'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(ws,{header:1});
+    if(!data.length){showToast('데이터가 없습니다',true);return}
+    excelHeaders=data[0].map(h=>(h||'').toString());
+    excelData=data.slice(1).filter(row=>row.some(c=>c));
+    renderExcelPreview();
+  };
+  r.readAsBinaryString(f);
+}
+function renderExcelPreview(){
+  document.getElementById('excelStep1').style.display='none';
+  document.getElementById('excelStep2').style.display='block';
+  document.getElementById('excelImportBtn').style.display='inline-flex';
+
+  // Preview table
+  const preview=excelData.slice(0,3);
+  document.getElementById('excelPreview').innerHTML=`
+    <table class="preview-table">
+      <tr>${excelHeaders.map(h=>`<th>${h}</th>`).join('')}</tr>
+      ${preview.map(row=>`<tr>${excelHeaders.map((_,i)=>`<td>${row[i]||''}</td>`).join('')}</tr>`).join('')}
+    </table>`;
+
+  // Auto-mapping: exact match first (알려진 컬럼명), then keyword fallback
+  const autoMap={};
+  excelHeaders.forEach((h,i)=>{
+    const hTrim=h.trim();
+    // 정밀 매핑: 알려진 컬럼명
+    if(KNOWN_COL_MAP[hTrim]){autoMap[i]=KNOWN_COL_MAP[hTrim];return;}
+    const hl=hTrim.toLowerCase();
+    if(hl.includes('회사')||hl.includes('company'))                              autoMap[i]='name';
+    else if(hl.includes('대분류')||hl.includes('산업')||hl.includes('분야'))     autoMap[i]='industry';
+    else if(hl.includes('중분류'))                                                autoMap[i]='subCategory';
+    else if(hl.includes('담당자')||hl.includes('이름'))                           autoMap[i]='contactName';
+    else if(hl.includes('휴대폰')||hl.includes('핸드폰')||hl.includes('mobile')) autoMap[i]='contactInfo';
+    else if(hl.includes('근무처')&&hl.includes('전화'))                           autoMap[i]='contactInfo2';
+    else if(hl.includes('전화')||hl.includes('연락처')||hl.includes('phone'))     autoMap[i]='contactInfo';
+    else if(hl.includes('이메일')||hl.includes('email')||hl.includes('전자 메일'))autoMap[i]='email';
+    else if(hl.includes('주소')||hl.includes('address'))                          autoMap[i]='address';
+    else if(hl.includes('단계')||hl.includes('상태')||hl.includes('status'))      autoMap[i]='status';
+    else if(hl.includes('메모')||hl.includes('note')||hl.includes('비고'))        autoMap[i]='memo';
+    else if(hl.includes('명함')||hl.includes('등록일')||hl.includes('carddate'))     autoMap[i]='cardDate';
+    else autoMap[i]='_skip';
+  });
+
+  document.getElementById('colMapping').innerHTML=excelHeaders.map((h,i)=>`
+    <div class="map-row">
+      <label>${h}</label>
+      <span style="color:var(--text3)">→</span>
+      <select id="map-${i}">
+        ${CRM_FIELDS.map(f=>`<option value="${f.key}" ${autoMap[i]===f.key?'selected':''}>${f.label}</option>`).join('')}
+      </select>
+    </div>`).join('');
+}
+function doExcelImport(){
+  const mapping={};
+  excelHeaders.forEach((_,i)=>{
+    const val=document.getElementById(`map-${i}`).value;
+    if(val!=='_skip')mapping[i]=val;
+  });
+
+  const VALID_STATUS=['잠재고객','가망고객','상담고객','제안고객','계약고객','냉담고객','관리고객'];
+  let added=0, skipped=0, dupes=0;
+  const companies=DB.companies;
+
+  excelData.forEach(row=>{
+    const raw={};
+    Object.entries(mapping).forEach(([i,field])=>{
+      raw[field]=(row[i]||'').toString().trim();
+    });
+
+    if(!raw.name){skipped++;return}
+
+    // 중복 체크 (회사명 기준)
+    if(companies.find(c=>c.name===raw.name)){dupes++;return}
+
+    // 연락처: 휴대폰 우선, 근무처 전화 보조로 합치기
+    let contactInfo=raw.contactInfo||'';
+    if(raw.contactInfo2){
+      contactInfo=contactInfo
+        ? `${contactInfo} / ${raw.contactInfo2}`
+        : raw.contactInfo2;
+    }
+
+    // 메모: 중분류 + 주소를 자동으로 조합
+    const memoParts=[];
+    if(raw.address)     memoParts.push(`[주소] ${raw.address}`);
+    if(raw.memo)        memoParts.push(raw.memo);
+    const memo=memoParts.join('\n');
+
+    // 주소 정규화: 행정 명칭 통일 (서울특별시→서울시 등)
+    function normAddr(addr){
+      if(!addr) return '';
+      return addr
+        .replace('서울특별시','서울시')
+        .replace('부산광역시','부산시')
+        .replace('대구광역시','대구시')
+        .replace('인천광역시','인천시')
+        .replace('광주광역시','광주시')
+        .replace('대전광역시','대전시')
+        .replace('울산광역시','울산시')
+        .replace('세종특별자치시','세종시')
+        .replace('경기도','경기도')
+        .replace('강원특별자치도','강원도')
+        .replace('충청북도','충북')
+        .replace('충청남도','충남')
+        .replace('전라북도','전북')
+        .replace('전라남도','전남')
+        .replace('경상북도','경북')
+        .replace('경상남도','경남')
+        .replace('제주특별자치도','제주도');
+    }
+    const coAddress = normAddr(raw.address||'');
+
+    const co={
+      id:uid(),
+      createdAt:new Date().toISOString().slice(0,10),
+      people:[],
+      name:raw.name,
+      industry:raw.industry||'',
+      subCategory:raw.subCategory||'',
+      contactName:raw.contactName||'',
+      contactInfo,
+      email:raw.email||'',
+      address:coAddress,
+      memo,
+      nextAction:raw.nextAction||'',
+      cardDate:parseCardDate(raw.cardDate),  // 엑셀 날짜 형식 정규화
+      status:VALID_STATUS.includes(raw.status)?raw.status:'잠재고객',
+      lastContact:'',
+    };
+
+    companies.push(co);
+    added++;
+  });
+
+  DB.companies=companies;
+  closeModal('excelModal');
+  renderCompanies();
+  updateBadges();
+  const msg=dupes>0
+    ?`${added}개 추가됨 (중복 ${dupes}개 건너뜀)`
+    :`${added}개 회사 추가됨`;
+  showToast(msg);
+}
+
+
+// ────────────────────────────────────────
+// RESET
+// ────────────────────────────────────────
+function openResetModal(){
+  openModal('resetModal');
+}
+function doReset(){
+  localStorage.removeItem('crm_companies');
+  localStorage.removeItem('crm_contacts');
+  localStorage.removeItem('crm_todos');
+  localStorage.removeItem('crm_emails');
+  localStorage.removeItem('crm_companies_initialized');
+  closeModal('resetModal');
+  showToast('전체 데이터가 삭제되었습니다');
+  // 샘플 없이 빈 상태로 시작
+  setTimeout(function(){ location.reload(); }, 1000);
+}
+
+// ────────────────────────────────────────
+// EXPORT / IMPORT
+// ────────────────────────────────────────
+function exportData(){
+  const data={companies:DB.companies,contacts:DB.contacts,todos:DB.todos,emails:DB.emails,appointments:DB.appointments,exportedAt:new Date().toISOString()};
+  const json=JSON.stringify(data,null,2);
+  try{
+    // Blob 방식 (크롬 일반 환경)
+    const blob=new Blob(['\ufeff'+json],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='solo-crm-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    showToast('백업 파일 다운로드됨');
+  }catch(e){
+    showToast('다운로드 실패 — 크롬에서 파일을 직접 열어 사용하세요',true);
+  }
+}
+function importJSON(e){
+  const f=e.target.files[0];
+  if(!f){ showToast('파일을 선택하세요',true); return; }
+  showToast('파일 읽는 중...');
+  const r=new FileReader();
+  r.onload=function(ev){
+    try{
+      const text = ev.target.result;
+      const d=JSON.parse(text);
+      if(!d.companies){ showToast('올바른 CRM 백업 파일이 아닙니다',true); return; }
+      DB.companies=d.companies;
+      if(d.contacts)     DB.contacts=d.contacts;
+      if(d.todos)        DB.todos=d.todos;
+      if(d.emails)       DB.emails=d.emails;
+      if(d.appointments) DB.appointments=d.appointments;
+      buildCategoryButtons();
+      buildRouteButtons();
+      renderCompanies();
+      renderTodo();
+      updateBadges();
+      showToast('✓ '+d.companies.length+'개사 데이터 로드 완료');
+    }catch(err){
+      console.error('JSON import error:', err);
+      showToast('오류: '+err.message, true);
+    }
+  };
+  r.onerror=function(){ showToast('파일 읽기 실패', true); };
+  r.readAsText(f);
+  e.target.value='';
+}
+
+// ────────────────────────────────────────
+// UTILS
+// ────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function showToast(msg,isError){
+  const t=document.getElementById('toast');
+  t.textContent=(isError?'⚠️ ':'✓ ')+msg;
+  t.style.borderColor=isError?'var(--red)':'var(--green)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function fmtDate(dt){
+  if(!dt)return'─';
+  const d=new Date(dt);
+  return`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDateFull(dt){
+  if(!dt)return'─';
+  const d=new Date(dt);
+  return`${fmtDate(dt)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// Close overlay on bg click
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')});
+});
+
+// ────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────
+// ── 데이터 마이그레이션: address/cardDate 없는 구버전 데이터 보정
+(function migrate(){
+  const companies = DB.companies;
+  let changed = false;
+  companies.forEach(co => {
+    if(co.address === undefined){ co.address = ''; changed = true; }
+    if(co.cardDate === undefined){ co.cardDate = ''; changed = true; }
+    if(co.industry === undefined){ co.industry = ''; changed = true; }
+    if(co.subCategory === undefined){ co.subCategory = ''; changed = true; }
+    if(co.people === undefined){ co.people = []; changed = true; }
+  });
+  if(changed) DB.companies = companies;
+})();
+initSample();
+migrateData();
+initFilters();
+renderTodo();
+updateBadges();
+
+// ── 수동 동기화 (클라우드 → 로컬)
+async function manualSync(){
+  showSyncStatus('동기화 중...');
+  var d = await supaGet();
+  if(d && d.companies && d.companies.length){
+    DB.companies=d.companies;
+    if(d.contacts)     DB.contacts=d.contacts;
+    if(d.todos)        DB.todos=d.todos;
+    if(d.emails)       DB.emails=d.emails;
+    if(d.appointments) DB.appointments=d.appointments;
+    buildCategoryButtons(); buildRouteButtons();
+    renderCompanies(); renderTodo(); updateBadges();
+    showSyncStatus('✓ 동기화 완료');
+  } else {
+    showSyncStatus('동기화 실패', true);
+  }
+}
+
+// ── 앱 시작 시 클라우드에서 데이터 로드
+async function loadFromCloud(){
+  showSyncStatus('데이터 로딩 중...');
+  try{
+    var d = await supaGet();
+    if(d && d.companies && d.companies.length){
+      DB.companies=d.companies;
+      if(d.contacts)     DB.contacts=d.contacts;
+      if(d.todos)        DB.todos=d.todos;
+      if(d.emails)       DB.emails=d.emails;
+      if(d.appointments) DB.appointments=d.appointments;
+      showSyncStatus('✓ 클라우드 데이터 로드됨');
+    } else if(DB.companies.length){
+      supaSet({companies:DB.companies,contacts:DB.contacts,todos:DB.todos,emails:DB.emails,appointments:DB.appointments});
+      showSyncStatus('✓ 로컬 데이터 업로드됨');
+    } else {
+      showSyncStatus('준비됨');
+    }
+  }catch(e){
+    showSyncStatus('오프라인 모드', true);
+  }
+  buildCategoryButtons(); buildRouteButtons();
+  renderCompanies(); renderTodo(); updateBadges();
+}
+
+loadFromCloud();
+</script>
+</body>
+</html>
